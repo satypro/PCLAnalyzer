@@ -1,0 +1,5 @@
+#ifndef SEARCHSCALE
+#define SEARCHSCALE
+
+#endif // SEARCHSCALE
+
