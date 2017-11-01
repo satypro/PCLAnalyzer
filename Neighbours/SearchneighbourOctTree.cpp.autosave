@@ -1,4 +1,4 @@
-#include "Neighbours/searchneighbour.h"
+#include "Neighbours/octtreesearchneighbour.h"
 #include <pcl/octree/octree_search.h>
 #include <pcl/point_types.h>
 #include <pcl/point_cloud.h>
@@ -15,6 +15,12 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr SearchNeighbour::GetNeighbourCloud(pcl::Poin
     {
         case Radius:
             return GetRadiusSearchNeighbour(cloud, searchPoint, searchScale.radius);
+            break;
+        case KNearest:
+            return SearchKNearest(cloud, searchPoint, searchScale.kNearest);
+            break;
+        case Voxel:
+            return SearchVoxel(cloud, searchPoint);
             break;
         defualt:
             return cloud;
@@ -39,4 +45,38 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr SearchNeighbour::GetRadiusSearchNeighbour(pc
     }
 
     return temp_Cloud;
+}
+
+pcl::PointCloud<pcl::PointXYZ>::Ptr SearchNeighbour::SearchKNearest(pcl::PointCloud<pcl::PointXYZ>::Ptr &cloud, pcl::PointXYZ& searchPoint, int k)
+{
+    std::vector<int> pointIdxNKNSearch;
+    std::vector<float> pointNKNSquaredDistance;
+
+    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_cluster (new pcl::PointCloud<pcl::PointXYZ>);
+
+    if (_octree->nearestKSearch (searchPoint, k, pointIdxNKNSearch, pointNKNSquaredDistance) > 0)
+    {
+        for (size_t i = 0; i < pointIdxNKNSearch.size (); ++i)
+        {
+            cloud_cluster->points.push_back(cloud->points[pointIdxNKNSearch[i]]);
+        }
+    }
+
+    return cloud_cluster;
+}
+
+pcl::PointCloud<pcl::PointXYZ>::Ptr SearchNeighbour::SearchVoxel(pcl::PointCloud<pcl::PointXYZ>::Ptr &cloud, pcl::PointXYZ& searchPoint)
+{
+    std::vector<int> pointIdxVec;
+    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_cluster (new pcl::PointCloud<pcl::PointXYZ>);
+
+    if (_octree->voxelSearch (searchPoint, pointIdxVec))
+    {
+        for (size_t i = 0; i < pointIdxVec.size (); ++i)
+        {
+            cloud_cluster->points.push_back(cloud->points[pointIdxVec[i]]);
+        }
+    }
+
+    return cloud_cluster;
 }
