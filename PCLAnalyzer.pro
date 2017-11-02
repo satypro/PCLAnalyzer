@@ -38,7 +38,8 @@ HEADERS  += pclanalyzerwindow.h \
     Classifiers/Classifier.h \
     Classifiers/ClassifiersBase.h \
     Classifiers/ClassifiersFactory.h \
-    Classifiers/ClassifierLabels.h
+    Classifiers/ClassifierLabels.h \
+    Classifiers/ClassifierType.h
 
 FORMS    += pclanalyzerwindow.ui
 

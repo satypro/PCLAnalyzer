@@ -20,6 +20,7 @@
 #include "Classifiers/ClassifiersBase.h"
 #include "Classifiers/ClassifiersFactory.h"
 #include "Classifiers/ClassifierLabels.h"
+#include "Classifiers/ClassifierType.h"
 #include "Utilities/CommonUtility.h"
 
 PCLAnalyzerWindow::PCLAnalyzerWindow(QWidget *parent) :
@@ -82,7 +83,7 @@ void PCLAnalyzerWindow::clickedSlot()
     search->Build(cloud, scale.resolution);
 
     DescriptorBase* descriptor =  DescriptorFactory::GetDescriptor();
-    ClassifiersBase* classifier = ClassifiersFactory::GetClassifier();
+    ClassifiersBase* classifier = ClassifiersFactory::GetClassifier(BasicClassifier);
 
     for (size_t i = 0; i < cloud->points.size (); ++i)
     {
