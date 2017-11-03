@@ -4,6 +4,14 @@
 
 Descriptor::Descriptor()
 {
+    // Later Configure to load the parameter required from XML file or Json file
+    // Currently loading it here by putting the key value;
+    _config = new Configuration();
+}
+
+Configuration* Descriptor::GetConfig()
+{
+    return _config;
 }
 
 Eigen::Vector4f Descriptor::Get3DCentroid()

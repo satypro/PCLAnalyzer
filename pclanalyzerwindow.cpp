@@ -81,6 +81,18 @@ void PCLAnalyzerWindow::clickedSlot()
 
     SearchNeighbourBase* search = SearchNeighbourFactory::GetNeighbourSearchDataStructure(OctTree);
     search->Build(cloud, scale.resolution);
+    /*Get the config for the Types and show this as the Property in the windows*/
+    Configuration* config = search->GetConfig();
+    std::map<std::string, std::string>& mapp = config->GetConfig();
+
+    /*for(std::map<std::string, std::string>::iterator it = mapp.begin(); it!=mapp.end(); ++it )
+    {
+        std::cout<<it->first<<" "<<it->second<<std::endl;
+    }
+    */
+    mapp["Radius"] = "14";
+    //config->SetValue("Radius","12");
+
 
     DescriptorBase* descriptor =  DescriptorFactory::GetDescriptor();
     ClassifiersBase* classifier = ClassifiersFactory::GetClassifier(BasicClassifier);

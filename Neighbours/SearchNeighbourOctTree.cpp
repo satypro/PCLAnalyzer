@@ -4,6 +4,18 @@
 #include <pcl/point_cloud.h>
 #include "Neighbours/SearchOptions.h"
 #include <iostream>
+#include <json/json.h>
+#include <json/value.h>
+#include <fstream>
+
+SearchNeighbourOctTree::SearchNeighbourOctTree()
+{
+    // Later Configure to load the parameter required from XML file or Json file
+    // Currently loading it here by putting the key value;
+    _config = new Configuration();
+    _config->SetValue("Radius","10");
+    _config->SetValue("Resolution","10");
+}
 
 void SearchNeighbourOctTree::Build(pcl::PointCloud<pcl::PointXYZ>::Ptr& cloud, float resolution)
 {
@@ -12,6 +24,12 @@ void SearchNeighbourOctTree::Build(pcl::PointCloud<pcl::PointXYZ>::Ptr& cloud, f
     _octree->setInputCloud (cloud);
     _octree->addPointsFromInputCloud ();
 }
+
+Configuration* SearchNeighbourOctTree::GetConfig()
+{
+    return _config;
+}
+
 
 pcl::PointCloud<pcl::PointXYZ>::Ptr SearchNeighbourOctTree::GetNeighbourCloud(pcl::PointXYZ &searchPoint, SearchOption searchOption)
 {
@@ -25,10 +43,12 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr SearchNeighbourOctTree::GetNeighbourCloud(pc
             break;
         case Voxel:
             return SearchVoxel(_cloud, searchPoint);
-            break;
-        defualt:
+        case Cyclinderical:
             return _cloud;
+            break;
     }
+
+    return _cloud;
 }
 
 pcl::PointCloud<pcl::PointXYZ>::Ptr SearchNeighbourOctTree::GetRadiusSearchNeighbour(pcl::PointCloud<pcl::PointXYZ>::Ptr &cloud, pcl::PointXYZ& searchPoint, float radius)
@@ -47,6 +67,10 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr SearchNeighbourOctTree::GetRadiusSearchNeigh
             temp_Cloud->points[i] = cloud->points[ pointIdxRadiusSearch[i] ];
         }
     }
+
+    std::string value = _config->GetValue("Radius");
+
+    std::cout<<"KEY VALUE"<<value<<std::endl;
 
     return temp_Cloud;
 }

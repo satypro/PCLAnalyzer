@@ -13,11 +13,14 @@ public:
     Eigen::Vector4f Get3DCentroid();
     Eigen::Matrix3f ComputeCovarianceMatrix();
     TensorType GetTensor();
+    Configuration* GetConfig();
 
     void setCloud(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud)
     {
         DescriptorBase::setCloud(cloud);
     }
+private:
+    Configuration* _config;
 };
 
 #endif // DESCRIPTOR_H

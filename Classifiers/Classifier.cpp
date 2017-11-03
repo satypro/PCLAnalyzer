@@ -4,7 +4,14 @@
 
 Classifier::Classifier()
 {
+    // Later Configure to load the parameter required from XML file or Json file
+    // Currently loading it here by putting the key value;
+    _config = new Configuration();
+}
 
+Configuration* Classifier::GetConfig()
+{
+    return _config;
 }
 
 std::vector<ClassLabels> Classifier::Classify(DescriptorBase* descriptor)

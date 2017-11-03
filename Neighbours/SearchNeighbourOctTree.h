@@ -10,9 +10,11 @@
 class SearchNeighbourOctTree : public SearchNeighbourBase
 {
 public:
+    SearchNeighbourOctTree();
     pcl::PointCloud<pcl::PointXYZ>::Ptr
         GetNeighbourCloud(pcl::PointXYZ& searchPoint, SearchOption option);
     void Build(pcl::PointCloud<pcl::PointXYZ>::Ptr& cloud, float resolution);
+    Configuration* GetConfig();
 
 private:
     pcl::octree::OctreePointCloudSearch<pcl::PointXYZ>* _octree;
@@ -26,6 +28,7 @@ private:
 
     pcl::PointCloud<pcl::PointXYZ>::Ptr
         SearchVoxel(pcl::PointCloud<pcl::PointXYZ>::Ptr &cloud, pcl::PointXYZ& searchPoint);
+    Configuration* _config;
 };
 
 #endif // SEARCHNEIGHBOUR_H

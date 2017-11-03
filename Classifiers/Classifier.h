@@ -7,6 +7,9 @@ class Classifier : public ClassifiersBase
 public:
     Classifier();
     std::vector<ClassLabels> Classify(DescriptorBase* descriptor);
+    Configuration* GetConfig();
+private:
+    Configuration* _config;
 };
 
 #endif // CLASSIFIER_H

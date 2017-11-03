@@ -22,7 +22,8 @@ SOURCES += main.cpp\
     Utilities/CommonUtility.cpp \
     Classifiers/Classifier.cpp \
     Classifiers/ClassifiersBase.cpp \
-    Classifiers/ClassifiersFactory.cpp
+    Classifiers/ClassifiersFactory.cpp \
+    Config/Configuration.cpp
 
 HEADERS  += pclanalyzerwindow.h \
     result.h \
@@ -39,13 +40,15 @@ HEADERS  += pclanalyzerwindow.h \
     Classifiers/ClassifiersBase.h \
     Classifiers/ClassifiersFactory.h \
     Classifiers/ClassifierLabels.h \
-    Classifiers/ClassifierType.h
+    Classifiers/ClassifierType.h \
+    Config/Configuration.h
 
 FORMS    += pclanalyzerwindow.ui
 
-DISTFILES +=
+DISTFILES += \
+    config.json
 
-INCLUDEPATH += /usr/local/include /usr/local/include/pcl-1.8 /usr/include/eigen3 /usr/include/teem /usr/include/vtk-5.10
+INCLUDEPATH += /usr/local/include /usr/local/include/pcl-1.8 /usr/include/eigen3 /usr/include/teem /usr/include/vtk-5.10 /usr/include/jsoncpp
 
 QMAKE_LIBDIR += /usr/local/lib /usr/lib /usr/lib/libteem /usr/local/include
 LIBS += -lboost_system -lpcl_common -lpcl_io_ply -lpcl_io -lpcl_kdtree -lpcl_keypoints -lpcl_octree -lpcl_filters -lpcl_visualization
