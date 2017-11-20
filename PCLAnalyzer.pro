@@ -23,7 +23,8 @@ SOURCES += main.cpp\
     Classifiers/Classifier.cpp \
     Classifiers/ClassifiersBase.cpp \
     Classifiers/ClassifiersFactory.cpp \
-    Config/Configuration.cpp
+    Config/Configuration.cpp \
+    mainwindow.cpp
 
 HEADERS  += pclanalyzerwindow.h \
     result.h \
@@ -41,9 +42,11 @@ HEADERS  += pclanalyzerwindow.h \
     Classifiers/ClassifiersFactory.h \
     Classifiers/ClassifierLabels.h \
     Classifiers/ClassifierType.h \
-    Config/Configuration.h
+    Config/Configuration.h \
+    mainwindow.h
 
-FORMS    += pclanalyzerwindow.ui
+FORMS    += pclanalyzerwindow.ui \
+    mainwindow.ui
 
 DISTFILES += \
     config.json

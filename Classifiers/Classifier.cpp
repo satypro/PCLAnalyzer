@@ -21,6 +21,9 @@ std::vector<ClassLabels> Classifier::Classify(DescriptorBase* descriptor)
     //1. Get the Covanariance Matrix and then get the Eigen Values
     //2. example line  e0~e1>>e2
 
+
+    descriptor->Get3DVotingTensor();
+
     Eigen::Matrix3f covariance_matrix = descriptor->ComputeCovarianceMatrix();
     EigenResult result = CommonUtility::ComputeEigen(covariance_matrix);
 

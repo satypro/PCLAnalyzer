@@ -95,11 +95,17 @@ void PCLAnalyzerWindow::clickedSlot()
 
 
     DescriptorBase* descriptor =  DescriptorFactory::GetDescriptor();
+    Configuration* descriptorConfig = descriptor->GetConfig();
+    std::map<std::string, std::string>& descriptorProperty = descriptorConfig->GetConfig();
+    descriptorProperty["sigma"] = "1.0";
+    descriptorProperty["lambdaN"] = "1.0";
+
     ClassifiersBase* classifier = ClassifiersFactory::GetClassifier(BasicClassifier);
 
     for (size_t i = 0; i < cloud->points.size (); ++i)
     {
         pcl::PointCloud<pcl::PointXYZ>::Ptr neighbourCloud = search->GetNeighbourCloud(cloud->points[i], option);
+        descriptor->setSource(cloud->points[i]);
         descriptor->setCloud(neighbourCloud);
 
         std::vector<ClassLabels> labels = classifier->Classify(descriptor);

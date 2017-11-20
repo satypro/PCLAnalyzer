@@ -13,7 +13,18 @@ public:
     virtual Eigen::Vector4f Get3DCentroid() = 0;
     virtual Eigen::Matrix3f ComputeCovarianceMatrix() = 0;
     virtual TensorType GetTensor() = 0;
+    virtual TensorType Get3DVotingTensor() = 0;
     virtual Configuration* GetConfig() = 0;
+
+    void virtual setSource(pcl::PointXYZ sourcePoint)
+    {
+        _sourcePoint = sourcePoint;
+    }
+
+    pcl::PointXYZ virtual getSource()
+    {
+        return _sourcePoint;
+    }
 
     void virtual setCloud(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud)
     {
@@ -26,6 +37,7 @@ public:
     }
 private:
     pcl::PointCloud<pcl::PointXYZ>::Ptr _cloud;
+    pcl::PointXYZ _sourcePoint;
 };
 
 #endif // DESCRIPTORBASE_H
