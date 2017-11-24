@@ -24,7 +24,13 @@ SOURCES += main.cpp\
     Classifiers/ClassifiersBase.cpp \
     Classifiers/ClassifiersFactory.cpp \
     Config/Configuration.cpp \
-    mainwindow.cpp
+    mainwindow.cpp \
+    IO/FileRead.cpp \
+    Controllers/MainController.cpp \
+    Views/ViewFactory.cpp \
+    Views/PCLView.cpp \
+    Controllers/ProcessController.cpp \
+    Controllers/ControllerFactory.cpp
 
 HEADERS  += pclanalyzerwindow.h \
     result.h \
@@ -43,7 +49,17 @@ HEADERS  += pclanalyzerwindow.h \
     Classifiers/ClassifierLabels.h \
     Classifiers/ClassifierType.h \
     Config/Configuration.h \
-    mainwindow.h
+    mainwindow.h \
+    IO/FileRead.h \
+    Utilities/eig3.h \
+    Controllers/MainController.h \
+    Views/ViewFactory.h \
+    Views/IViews.h \
+    Models/ViewModel.h \
+    Views/PCLView.h \
+    Controllers/ProcessController.h \
+    Controllers/IControllerBase.h \
+    Controllers/ControllerFactory.h
 
 FORMS    += pclanalyzerwindow.ui \
     mainwindow.ui

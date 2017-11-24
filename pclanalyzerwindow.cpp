@@ -1,6 +1,7 @@
 #include "pclanalyzerwindow.h"
 #include "ui_pclanalyzerwindow.h"
 #include <iostream>
+#include <vector>
 #include <QPushButton>
 #include <QHBoxLayout>
 #include <QVBoxLayout>
@@ -10,6 +11,7 @@
 #include <pcl/point_types.h>
 #include <pcl/point_cloud.h>
 #include <pcl/common/common.h>
+#include <pcl/visualization/cloud_viewer.h>
 #include "Neighbours/SearchOptions.h"
 #include "Neighbours/SearchNeighbourBase.h"
 #include "Neighbours/SearchNeighbourOctTree.h"
@@ -22,6 +24,7 @@
 #include "Classifiers/ClassifierLabels.h"
 #include "Classifiers/ClassifierType.h"
 #include "Utilities/CommonUtility.h"
+#include "IO/FileRead.h"
 
 PCLAnalyzerWindow::PCLAnalyzerWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -55,21 +58,42 @@ PCLAnalyzerWindow::PCLAnalyzerWindow(QWidget *parent) :
 
 void PCLAnalyzerWindow::clickedSlot()
 {
+    std::vector <float> _intensity;
+
     QString fileName = QFileDialog::getOpenFileName(this,
     tr("Select File"), "/home/", tr("Files (*.*)"));
     txt->setText(fileName);
 
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ>);
 
+    /*
     if (pcl::io::loadPCDFile<pcl::PointXYZ> (fileName.toUtf8().constData(), *cloud) == -1) //* load the file
     {
         PCL_ERROR ("Couldn't read file some_pcd.pcd \n");
             return;
     }
+    */
+
+    std::string _filePath = fileName.toUtf8().constData();
+
+    if(_filePath == "NULL")
+    {
+        std::cout<<"Invalid File Path"<<std::endl;
+        return;
+    }
+    else
+    {
+        FileRead *readObject = new FileRead;
+        bool nErrorCode = readObject->read(_filePath, cloud, _intensity);
+        delete readObject;
+
+        if (nErrorCode == false)
+            return;
+    }
 
     /*Setting the Search Scale*/
     SearchScale scale;
-    scale.radius = 0.5f;
+    scale.radius = 0.01f;
     scale.kNearest = 20;
     scale.resolution = 128.0f;
 
@@ -90,9 +114,8 @@ void PCLAnalyzerWindow::clickedSlot()
         std::cout<<it->first<<" "<<it->second<<std::endl;
     }
     */
-    mapp["Radius"] = "14";
+    mapp["Radius"] = "1";
     //config->SetValue("Radius","12");
-
 
     DescriptorBase* descriptor =  DescriptorFactory::GetDescriptor();
     Configuration* descriptorConfig = descriptor->GetConfig();
@@ -102,8 +125,16 @@ void PCLAnalyzerWindow::clickedSlot()
 
     ClassifiersBase* classifier = ClassifiersFactory::GetClassifier(BasicClassifier);
 
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr colordCloud (new pcl::PointCloud<pcl::PointXYZRGB>);
+
     for (size_t i = 0; i < cloud->points.size (); ++i)
     {
+        if (isnan(cloud->points[i].x) || isnan(cloud->points[i].y) || isnan(cloud->points[i].z))
+        {
+            std::cout<<"The Point at : "<<i<<" NAN : "<<std::endl;
+            continue;
+        }
+
         pcl::PointCloud<pcl::PointXYZ>::Ptr neighbourCloud = search->GetNeighbourCloud(cloud->points[i], option);
         descriptor->setSource(cloud->points[i]);
         descriptor->setCloud(neighbourCloud);
@@ -112,20 +143,39 @@ void PCLAnalyzerWindow::clickedSlot()
 
         std::cout<<"The Point at : "<<i<<" classified as : "<<labels.at(0)<<std::endl;
 
-        /*
-        Eigen::Matrix3f covariance_matrix = descriptor->ComputeCovarianceMatrix();
-        std::cout<<"The CoVariance Matrix : "<<i<<std::endl;
-        std::cout<<covariance_matrix(0,0) << " "<<covariance_matrix(0,1) <<" "<<covariance_matrix(0,2)<<std::endl;
-        std::cout<<covariance_matrix(1,0) << " "<<covariance_matrix(1,1) <<" "<<covariance_matrix(1,2)<<std::endl;
-        std::cout<<covariance_matrix(2,0) << " "<<covariance_matrix(2,1) <<" "<<covariance_matrix(2,2)<<std::endl;
+        if (labels.at(0) == Point)
+        {
+            pcl::PointXYZRGB point = pcl::PointXYZRGB(255,0, 0);
+            point.x = cloud->points[i].x;
+            point.y = cloud->points[i].y;
+            point.z = cloud->points[i].z;
+            colordCloud->points.push_back(point);
+        }
 
-        EigenResult result = CommonUtility::ComputeEigen(covariance_matrix);
-        std::cout<<"The Eigen Values for Matrix : "<<i<<std::endl;
-        std::cout<<result.EigenValues(0,0) << " "<<result.EigenValues(1,0) <<" "<<result.EigenValues(2,0)<<std::endl;
-        */
+        if (labels.at(0) == Curve)
+        {
+            pcl::PointXYZRGB point = pcl::PointXYZRGB(0,255, 0);
+            point.x = cloud->points[i].x;
+            point.y = cloud->points[i].y;
+            point.z = cloud->points[i].z;
+            colordCloud->points.push_back(point);
+        }
+
+        if (labels.at(0) == Disc)
+        {
+            pcl::PointXYZRGB point = pcl::PointXYZRGB(0,0, 255);
+            point.x = cloud->points[i].x;
+            point.y = cloud->points[i].y;
+            point.z = cloud->points[i].z;
+            colordCloud->points.push_back(point);
+        }
     }
-    /*One of the way to get the descriptors*/
-    /*Using Decriptor for each point infer the  point structure, like if its a part of line, surface etc.*/
+
+    pcl::visualization::CloudViewer viewer ("Colored Viewver");
+    viewer.showCloud(colordCloud);
+
+    while(!viewer.wasStopped())
+    {}
 }
 
 PCLAnalyzerWindow::~PCLAnalyzerWindow()

@@ -47,7 +47,6 @@ TensorType Descriptor::Get3DVotingTensor()
         result.evec2[j] = 0;
     }
 
-
     pcl::PointCloud<pcl::PointXYZ>::Ptr neighbourCloud = getCloud();
 
     for (size_t i = 0; i < neighbourCloud->points.size() ; i++)
@@ -55,11 +54,6 @@ TensorType Descriptor::Get3DVotingTensor()
         if (MakeVector(getSource(), neighbourCloud->points[i], &V))
         {
             tensor = Compute3DBallVote(V, &weight);
-
-            std::cout<<"Vector :"<<V(0,0)<<" " << V(1, 0) <<" "<<V(2,0)<<std::endl;
-            std::cout<<"Tesnsor Row 0 :"<<tensor.evec0[0] <<" "<<tensor.evec0[1]<<" "<< tensor.evec0[2] << std::endl;
-            std::cout<<"Tesnsor Row 1 :"<<tensor.evec1[0] <<" "<<tensor.evec1[1]<<" "<< tensor.evec1[2] << std::endl;
-            std::cout<<"Tesnsor Row 2 :"<<tensor.evec2[0] <<" "<<tensor.evec2[1]<<" "<< tensor.evec2[2] << std::endl;
 
             for(int j =0; j < 3; j++)
             {
@@ -69,10 +63,6 @@ TensorType Descriptor::Get3DVotingTensor()
             }
         }
     }
-
-    std::cout<<"Tesnsor  R Row 0 :"<<result.evec0[0] <<" "<<result.evec0[1]<<" "<< result.evec0[2] << std::endl;
-    std::cout<<"Tesnsor  R Row 1 :"<<result.evec1[0] <<" "<<result.evec1[1]<<" "<< result.evec1[2] << std::endl;
-    std::cout<<"Tesnsor  R Row 2 :"<<result.evec2[0] <<" "<<result.evec2[1]<<" "<< result.evec2[2] << std::endl;
 
     return result;
 }
@@ -132,7 +122,6 @@ TensorType Descriptor::Compute3DBallVote(Eigen::Matrix<double, 3, 1> V, float *w
     char* pEnd;
     float _sigma = ::strtof(_config->GetValue("sigma").c_str(), &pEnd);
 
-    std::cout<<"SIGMA "<< _sigma<<std::endl;
     voteTemp.setZero(3, 3);
     vv.setZero(3, 3);
     I.setIdentity();

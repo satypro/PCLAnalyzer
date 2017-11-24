@@ -68,10 +68,6 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr SearchNeighbourOctTree::GetRadiusSearchNeigh
         }
     }
 
-    std::string value = _config->GetValue("Radius");
-
-    std::cout<<"KEY VALUE"<<value<<std::endl;
-
     return temp_Cloud;
 }
 
