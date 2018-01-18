@@ -4,7 +4,12 @@
 #
 #-------------------------------------------------
 
-QT       += core gui
+QT       += core \
+        gui \
+        opengl \
+        network \
+        xml \
+        widgets
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -30,7 +35,10 @@ SOURCES += main.cpp\
     Views/ViewFactory.cpp \
     Views/PCLView.cpp \
     Controllers/ProcessController.cpp \
-    Controllers/ControllerFactory.cpp
+    Controllers/ControllerFactory.cpp \
+    Display/PDisplay.cpp \
+    Display/FastTrackball.cpp \
+    Display/Glwidget.cpp
 
 HEADERS  += pclanalyzerwindow.h \
     result.h \
@@ -59,7 +67,10 @@ HEADERS  += pclanalyzerwindow.h \
     Views/PCLView.h \
     Controllers/ProcessController.h \
     Controllers/IControllerBase.h \
-    Controllers/ControllerFactory.h
+    Controllers/ControllerFactory.h \
+    Display/PDisplay.h \
+    Display/FastTrackball.h \
+    Display/Glwidget.h
 
 FORMS    += pclanalyzerwindow.ui \
     mainwindow.ui

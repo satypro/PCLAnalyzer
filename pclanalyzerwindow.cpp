@@ -7,6 +7,7 @@
 #include <QVBoxLayout>
 #include <QFileDialog>
 #include <QTextEdit>
+#include <QtOpenGL>
 #include <pcl/io/pcd_io.h>
 #include <pcl/point_types.h>
 #include <pcl/point_cloud.h>
@@ -25,13 +26,21 @@
 #include "Classifiers/ClassifierType.h"
 #include "Utilities/CommonUtility.h"
 #include "IO/FileRead.h"
+#include "Display/PDisplay.h"
+#include "Display/Glwidget.h"
 
 PCLAnalyzerWindow::PCLAnalyzerWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::PCLAnalyzerWindow)
+//PCLAnalyzerWindow::PCLAnalyzerWindow()
 {
-    ui->setupUi(this);
-    
+    //ui->setupUi(this);
+    glWidget = new GLWidget(0, this);
+    this->resize(800, 800);
+    setCentralWidget(glWidget);
+    setWindowTitle(tr("Vis tool"));
+
+
     QPushButton *btnGetFile = new QPushButton(this);
     txt = new QTextEdit();
     
@@ -52,12 +61,20 @@ PCLAnalyzerWindow::PCLAnalyzerWindow(QWidget *parent) :
     hLayout->addWidget(btnGetFile);
     layout->addLayout(hLayout);
     
-    setCentralWidget(centralWidget);
-    setWindowTitle("Spatial Partitioning");
+    QDockWidget *dock;
+    dock = new QDockWidget(tr(""), this);
+    dock->setAllowedAreas(Qt::RightDockWidgetArea);
+    dock->setFloating(false);
+    addDockWidget(Qt::RightDockWidgetArea, dock);
+    dock->setWidget(centralWidget);
+
+    //setCentralWidget(centralWidget);
+    //setWindowTitle("Spatial Partitioning");
 }
 
 void PCLAnalyzerWindow::clickedSlot()
 {
+       // display();
     std::vector <float> _intensity;
 
     QString fileName = QFileDialog::getOpenFileName(this,
@@ -178,7 +195,13 @@ void PCLAnalyzerWindow::clickedSlot()
     {}
 }
 
+void PCLAnalyzerWindow::display()
+{
+    PDisplay d;
+    d.Print();
+}
+
 PCLAnalyzerWindow::~PCLAnalyzerWindow()
 {
-    delete ui;
+    //delete ui;
 }
