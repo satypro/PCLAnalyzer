@@ -14,5 +14,5 @@ Once, we obtained the descriptors we can do analysis to classify point as a part
     {
         std::cout<<it->first<<" "<<it->second<<std::endl;
     }
-    //config->SetValue("Radius","12");
+    config->SetValue("Radius","12");
     */
