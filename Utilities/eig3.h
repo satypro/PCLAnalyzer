@@ -1,6 +1,5 @@
-#ifndef EIG3_H
-#define EIG3_H
-
+#ifndef EIG3_COMMON_H
+#define EIG3_COMMON_H
 
 ///* Eigen decomposition code for symmetric 3x3 matrices, copied from the public
 //   domain Java Matrix library JAMA. */
@@ -12,7 +11,7 @@
 
 #define MAX(a, b) ((a)>(b)?(a):(b))
 
-#define n 3
+//#define n 3
 
 inline static float hypot2(float x, float y) {
   return sqrt(x*x+y*y);
@@ -23,13 +22,13 @@ inline static float hypot2(float x, float y) {
 inline static void tred2(float V[3][3], float d[3], float e[3])
  {
 
-  for (int j = 0; j < n; j++) {
-    d[j] = V[n-1][j];
+  for (int j = 0; j < 3; j++) {
+    d[j] = V[3-1][j];
   }
 
   // Householder reduction to tridiagonal form.
 
-  for (int i = n-1; i > 0; i--)
+  for (int i = 3-1; i > 0; i--)
   {
     // Scale to avoid under/overflow.
     float scale = 0.0;
@@ -108,8 +107,8 @@ inline static void tred2(float V[3][3], float d[3], float e[3])
 
   // Accumulate transformations.
 
-  for (int i = 0; i < n-1; i++) {
-    V[n-1][i] = V[i][i];
+  for (int i = 0; i < 3-1; i++) {
+    V[3-1][i] = V[i][i];
     V[i][i] = 1.0;
     float h = d[i+1];
     if (h != 0.0) {
@@ -130,11 +129,11 @@ inline static void tred2(float V[3][3], float d[3], float e[3])
       V[k][i+1] = 0.0;
     }
   }
-  for (int j = 0; j < n; j++) {
-    d[j] = V[n-1][j];
-    V[n-1][j] = 0.0;
+  for (int j = 0; j < 3; j++) {
+    d[j] = V[3-1][j];
+    V[3-1][j] = 0.0;
   }
-  V[n-1][n-1] = 1.0;
+  V[3-1][3-1] = 1.0;
   e[0] = 0.0;
 }
 
@@ -147,21 +146,21 @@ inline static void tql2(float V[3][3], float d[3], float e[3]) {
 ////  Auto. Comp., Vol.ii-Linear Algebra, and the corresponding
 ////  Fortran subroutine in EISPACK.
 
-  for (int i = 1; i < n; i++) {
+  for (int i = 1; i < 3; i++) {
     e[i-1] = e[i];
   }
-  e[n-1] = 0.0;
+  e[3-1] = 0.0;
 
   float f = 0.0;
   float tst1 = 0.0;
   float eps = pow(2.0,-52.0);
-  for (int l = 0; l < n; l++) {
+  for (int l = 0; l < 3; l++) {
 
     // Find small subdiagonal element
 
     tst1 = MAX(tst1,fabs(d[l]) + fabs(e[l]));
     int m = l;
-    while (m < n) {
+    while (m < 3) {
       if (fabs(e[m]) <= eps*tst1) {
         break;
       }
@@ -188,7 +187,7 @@ inline static void tql2(float V[3][3], float d[3], float e[3]) {
         d[l+1] = e[l] * (p + r);
         float dl1 = d[l+1];
         float h = g - d[l];
-        for (int i = l+2; i < n; i++) {
+        for (int i = l+2; i < 3; i++) {
           d[i] -= h;
         }
         f = f + h;
@@ -217,7 +216,7 @@ inline static void tql2(float V[3][3], float d[3], float e[3]) {
 
           // Accumulate transformation.
 
-          for (int k = 0; k < n; k++) {
+          for (int k = 0; k < 3; k++) {
             h = V[k][i+1];
             V[k][i+1] = s * V[k][i] + c * h;
             V[k][i] = c * V[k][i] - s * h;
@@ -237,10 +236,10 @@ inline static void tql2(float V[3][3], float d[3], float e[3]) {
 
   // Sort eigenvalues and corresponding vectors.
 
-  for (int i = 0; i < n-1; i++) {
+  for (int i = 0; i < 3-1; i++) {
     int k = i;
     float p = d[i];
-    for (int j = i+1; j < n; j++) {
+    for (int j = i+1; j < 3; j++) {
       if (d[j] < p) {
         k = j;
         p = d[j];
@@ -249,7 +248,7 @@ inline static void tql2(float V[3][3], float d[3], float e[3]) {
     if (k != i) {
       d[k] = d[i];
       d[i] = p;
-      for (int j = 0; j < n; j++) {
+      for (int j = 0; j < 3; j++) {
         p = V[j][i];
         V[j][i] = V[j][k];
         V[j][k] = p;
@@ -260,10 +259,10 @@ inline static void tql2(float V[3][3], float d[3], float e[3]) {
 
 inline void eigen_decomposition(float A[3][3], float V[3][3], float d[3])
  {
-  float e[n];
+  float e[3];
 
-  for (int i = 0; i < n; i++) {
-    for (int j = 0; j < n; j++) {
+  for (int i = 0; i < 3; i++) {
+    for (int j = 0; j < 3; j++) {
       V[i][j] = A[i][j];
     }
   }
@@ -271,4 +270,4 @@ inline void eigen_decomposition(float A[3][3], float V[3][3], float d[3])
   tql2(V, d, e);
 }
 
-#endif // EIG3_H
+#endif

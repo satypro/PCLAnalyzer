@@ -7,6 +7,7 @@
 class IViews
 {
 public:
-    virtual void Show(ViewModel model) = 0;
+    virtual void Show() = 0;
+    ViewModel model;
 };
 #endif // IVIEWS_H

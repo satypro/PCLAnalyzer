@@ -7,7 +7,7 @@ class PCLView : public IViews
 {
 public:
     PCLView();
-    void Show(ViewModel model);
+    void Show();
 };
 
 #endif // PCLVIEW_H

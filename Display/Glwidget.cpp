@@ -22,9 +22,9 @@ GLWidget::GLWidget(QWidget *parent, PCLAnalyzerWindow *mainWnd)
 
     enableZoom = 1;
 
-    enableZoomIn = 0;
+    enableZoomIn = 1;
 
-    enableZoomOut = 0;
+    enableZoomOut = 1;
 
     enableRotation = 1;
 
@@ -77,9 +77,9 @@ void GLWidget :: getVersions(void)
 void GLWidget :: setInitSize(void)
 {
 #ifdef QT_OPENGL_ES_1
-    glOrthof(-2, 2, -2, 2, -100, 100) ;
+    glOrthof(-1, 1, -1, 1, -100, 100) ;
 #else
-    glOrtho(-2, 2, -2, 2, -100, 100) ;
+    glOrtho(-1, 1, -1, 1, -100, 100) ;
 #endif
 
 }

@@ -5,15 +5,15 @@
 #include <pcl/point_cloud.h>
 #include "Types/datatypes.h"
 #include "Config/Configuration.h"
+#include "Models/ViewModel.h"
 
 class DescriptorBase
 {
 public:
     DescriptorBase(){ }
-    virtual Eigen::Vector4f Get3DCentroid() = 0;
-    virtual Eigen::Matrix3f ComputeCovarianceMatrix() = 0;
-    virtual TensorType GetTensor() = 0;
-    virtual TensorType Get3DVotingTensor() = 0;
+
+    virtual PointDescriptor GeneratePointDescriptor() = 0 ;
+
     virtual Configuration* GetConfig() = 0;
 
     void virtual setSource(pcl::PointXYZ sourcePoint)

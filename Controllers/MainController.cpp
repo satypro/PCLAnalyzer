@@ -12,10 +12,12 @@ MainController::MainController()
 
 }
 
-void MainController::Process(std::string controllerName, std::string viewName, std::map<std::string, std::string> request)
+IViews* MainController::Process(std::string controllerName, std::string viewName, std::map<std::string, std::string> request)
 {
     IControllerBase* controller = ControllerFactory::GetController(controllerName);
     ViewModel model = controller->Process(request);
     IViews* view = ViewFactory::GetView(viewName);
-    view->Show(model);
+    view->model = model;
+
+    return view;
 }

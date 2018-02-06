@@ -19,7 +19,6 @@ TEMPLATE = app
 
 SOURCES += main.cpp\
         pclanalyzerwindow.cpp \
-    result.cpp \
     Neighbours/SearchNeighbourOctTree.cpp \
     Neighbours/SearchNeighbourFactory.cpp \
     Descriptors/DescriptorFactory.cpp \
@@ -29,19 +28,17 @@ SOURCES += main.cpp\
     Classifiers/ClassifiersBase.cpp \
     Classifiers/ClassifiersFactory.cpp \
     Config/Configuration.cpp \
-    mainwindow.cpp \
     IO/FileRead.cpp \
     Controllers/MainController.cpp \
     Views/ViewFactory.cpp \
     Views/PCLView.cpp \
     Controllers/ProcessController.cpp \
     Controllers/ControllerFactory.cpp \
-    Display/PDisplay.cpp \
     Display/FastTrackball.cpp \
-    Display/Glwidget.cpp
+    Display/Glwidget.cpp \
+    Config/Request.cpp
 
 HEADERS  += pclanalyzerwindow.h \
-    result.h \
     Neighbours/SearchNeighbourOctTree.h \
     Neighbours/SearchNeighbourFactory.h \
     Descriptors/DescriptorFactory.h \
@@ -57,7 +54,6 @@ HEADERS  += pclanalyzerwindow.h \
     Classifiers/ClassifierLabels.h \
     Classifiers/ClassifierType.h \
     Config/Configuration.h \
-    mainwindow.h \
     IO/FileRead.h \
     Utilities/eig3.h \
     Controllers/MainController.h \
@@ -68,9 +64,9 @@ HEADERS  += pclanalyzerwindow.h \
     Controllers/ProcessController.h \
     Controllers/IControllerBase.h \
     Controllers/ControllerFactory.h \
-    Display/PDisplay.h \
     Display/FastTrackball.h \
-    Display/Glwidget.h
+    Display/Glwidget.h \
+    Config/Request.h
 
 FORMS    += pclanalyzerwindow.ui \
     mainwindow.ui
@@ -78,10 +74,10 @@ FORMS    += pclanalyzerwindow.ui \
 DISTFILES += \
     config.json
 
-INCLUDEPATH += /usr/local/include /usr/local/include/pcl-1.8 /usr/include/eigen3 /usr/include/teem /usr/include/vtk-5.10 /usr/include/jsoncpp
+INCLUDEPATH += /usr/local/include /usr/local/include/pcl-1.8 /usr/include/eigen3 /usr/local/include/teem /usr/include/vtk-5.10 /usr/include/jsoncpp
 
-QMAKE_LIBDIR += /usr/local/lib /usr/lib /usr/lib/libteem /usr/local/include
+QMAKE_LIBDIR += /usr/local/lib /usr/lib /usr/local/lib/libteem /usr/local/include
+LIBS += -lteem
 LIBS += -lboost_system -lpcl_common -lpcl_io_ply -lpcl_io -lpcl_kdtree -lpcl_keypoints -lpcl_octree -lpcl_filters -lpcl_visualization
 LIBS += -lpcl_search -lpcl_filters -lpcl_segmentation -lpcl_features -lpcl_search -lGL -lGLU
-LIBS += -lteem
 LIBS += -L"/usr/include" -lCGAL -lgmp

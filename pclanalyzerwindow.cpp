@@ -8,38 +8,18 @@
 #include <QFileDialog>
 #include <QTextEdit>
 #include <QtOpenGL>
-#include <pcl/io/pcd_io.h>
-#include <pcl/point_types.h>
-#include <pcl/point_cloud.h>
-#include <pcl/common/common.h>
-#include <pcl/visualization/cloud_viewer.h>
-#include "Neighbours/SearchOptions.h"
-#include "Neighbours/SearchNeighbourBase.h"
-#include "Neighbours/SearchNeighbourOctTree.h"
-#include "Neighbours/SearchNeighbourFactory.h"
-#include "Descriptors/Descriptor.h"
-#include "Descriptors/DescriptorBase.h"
-#include "Descriptors/DescriptorFactory.h"
-#include "Classifiers/ClassifiersBase.h"
-#include "Classifiers/ClassifiersFactory.h"
-#include "Classifiers/ClassifierLabels.h"
-#include "Classifiers/ClassifierType.h"
-#include "Utilities/CommonUtility.h"
-#include "IO/FileRead.h"
-#include "Display/PDisplay.h"
 #include "Display/Glwidget.h"
+#include "Controllers/MainController.h"
+#include "Config/Request.h"
 
 PCLAnalyzerWindow::PCLAnalyzerWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::PCLAnalyzerWindow)
-//PCLAnalyzerWindow::PCLAnalyzerWindow()
 {
-    //ui->setupUi(this);
     glWidget = new GLWidget(0, this);
     this->resize(800, 800);
     setCentralWidget(glWidget);
-    setWindowTitle(tr("Vis tool"));
-
+    setWindowTitle(tr("Point Cloud Visualization Board"));
 
     QPushButton *btnGetFile = new QPushButton(this);
     txt = new QTextEdit();
@@ -49,9 +29,66 @@ PCLAnalyzerWindow::PCLAnalyzerWindow(QWidget *parent) :
     btnGetFile->setFixedHeight(30);
     txt->setFixedHeight(30);
     
-    QObject::connect(btnGetFile, SIGNAL(clicked()),this, SLOT(clickedSlot()));
+    QObject::connect(btnGetFile, SIGNAL(clicked()),this, SLOT(setFilePath()));
     btnGetFile->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
     
+
+
+       QAction *action_Open = new QAction(this);
+      // action_Open->setObjectName(QString::fromUtf8("action_Open"));
+       action_Open->setText(tr("Open"));
+      // action_Open->setIcon(ICON_OPEN);
+       action_Open->setShortcut(tr("Ctrl+F"));
+       action_Open->setStatusTip(tr("Open file"));
+       connect(action_Open, SIGNAL(triggered()), this, SLOT(setFilePath()));
+
+       QAction *exitAct = new QAction(tr("E&xit"), this);
+       exitAct->setShortcuts(QKeySequence::Quit);
+       connect(exitAct, SIGNAL(triggered()), this, SLOT(close()));
+
+       QMenu *fileMenu = fileMenu = menuBar()->addMenu(tr("&File"));
+
+       fileMenu->addAction(action_Open);
+       fileMenu->addSeparator();
+       fileMenu->addAction(exitAct);
+
+
+       QComboBox* tensorType = new QComboBox();
+           // Fill the items of the ComboBox
+           tensorType->addItem("3DVT-GET");
+           tensorType->addItem("3DVT");
+           tensorType->addItem("3DCM");
+           tensorType->addItem("3DMCM");
+           tensorType->addItem("2DGET");
+           tensorType->addItem("Hessian");
+           tensorType->addItem("2DCM");
+
+         QGroupBox *previewGroupBox;
+         previewGroupBox = new QGroupBox(tr("Parameters"));
+            setStyleSheet(QString::fromUtf8("QGroupBox { border: 2px solid red; margin-bottom: 7px;margin-right: 7px; padding: 5px} QGroupBox::title {top:7 ex;left: 10px; subcontrol-origin: border}"));
+
+        QGridLayout *previewLayout = new QGridLayout;
+
+         previewLayout->addWidget(tensorType);
+        previewGroupBox->setLayout(previewLayout);
+
+
+
+
+
+
+
+
+
+    QPushButton *btnReadCloud = new QPushButton(this);
+    btnReadCloud->setText("Process Cloud");
+    btnReadCloud->setFixedWidth(100);
+    btnReadCloud->setFixedHeight(30);
+
+    QObject::connect(btnReadCloud, SIGNAL(clicked()),this, SLOT(processCloud()));
+    btnReadCloud->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
+
+
     QWidget* centralWidget = new QWidget(this);
     centralWidget->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
     
@@ -59,8 +96,21 @@ PCLAnalyzerWindow::PCLAnalyzerWindow(QWidget *parent) :
     QHBoxLayout* hLayout = new QHBoxLayout(centralWidget);
     hLayout->addWidget(txt);
     hLayout->addWidget(btnGetFile);
+
+    QHBoxLayout* hLayout2 = new QHBoxLayout(centralWidget);
+    hLayout2->addWidget(btnReadCloud);
+
     layout->addLayout(hLayout);
-    
+    layout->addLayout(hLayout2);
+
+
+    QDockWidget *dock1;
+        dock1 = new QDockWidget(tr(""), this);
+        dock1->setAllowedAreas(Qt::RightDockWidgetArea);
+        dock1->setFloating(false);
+        addDockWidget(Qt::RightDockWidgetArea, dock1);
+        dock1->setWidget(previewGroupBox);
+
     QDockWidget *dock;
     dock = new QDockWidget(tr(""), this);
     dock->setAllowedAreas(Qt::RightDockWidgetArea);
@@ -68,140 +118,44 @@ PCLAnalyzerWindow::PCLAnalyzerWindow(QWidget *parent) :
     addDockWidget(Qt::RightDockWidgetArea, dock);
     dock->setWidget(centralWidget);
 
-    //setCentralWidget(centralWidget);
-    //setWindowTitle("Spatial Partitioning");
+
+
 }
 
-void PCLAnalyzerWindow::clickedSlot()
+void PCLAnalyzerWindow::processCloud()
 {
-       // display();
-    std::vector <float> _intensity;
+    displayCloud = false;
 
+    Request* req = new Request();
+    std::map<std::string, std::string>& request = req->GetRequest();
+    request["filePath"] = _filePath;
+
+    MainController* controller = new MainController();
+    _view = controller->Process("PROCESS", "PCLVIEWER", request);
+
+    // View is ready with the model
+    // now it can be vizualized
+    displayCloud = true;
+}
+
+void PCLAnalyzerWindow::setFilePath()
+{
     QString fileName = QFileDialog::getOpenFileName(this,
     tr("Select File"), "/home/", tr("Files (*.*)"));
     txt->setText(fileName);
-
-    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ>);
-
-    /*
-    if (pcl::io::loadPCDFile<pcl::PointXYZ> (fileName.toUtf8().constData(), *cloud) == -1) //* load the file
-    {
-        PCL_ERROR ("Couldn't read file some_pcd.pcd \n");
-            return;
-    }
-    */
-
-    std::string _filePath = fileName.toUtf8().constData();
-
-    if(_filePath == "NULL")
-    {
-        std::cout<<"Invalid File Path"<<std::endl;
-        return;
-    }
-    else
-    {
-        FileRead *readObject = new FileRead;
-        bool nErrorCode = readObject->read(_filePath, cloud, _intensity);
-        delete readObject;
-
-        if (nErrorCode == false)
-            return;
-    }
-
-    /*Setting the Search Scale*/
-    SearchScale scale;
-    scale.radius = 0.01f;
-    scale.kNearest = 20;
-    scale.resolution = 128.0f;
-
-    /*Search Neighbour Options*/
-    SearchOption option;
-    option.neighbourSearchDataStructure = OctTree;
-    option.neighbourSearchTypes = Radius;
-    option.scale = scale;
-
-    SearchNeighbourBase* search = SearchNeighbourFactory::GetNeighbourSearchDataStructure(OctTree);
-    search->Build(cloud, scale.resolution);
-    /*Get the config for the Types and show this as the Property in the windows*/
-    Configuration* config = search->GetConfig();
-    std::map<std::string, std::string>& mapp = config->GetConfig();
-
-    /*for(std::map<std::string, std::string>::iterator it = mapp.begin(); it!=mapp.end(); ++it )
-    {
-        std::cout<<it->first<<" "<<it->second<<std::endl;
-    }
-    */
-    mapp["Radius"] = "1";
-    //config->SetValue("Radius","12");
-
-    DescriptorBase* descriptor =  DescriptorFactory::GetDescriptor();
-    Configuration* descriptorConfig = descriptor->GetConfig();
-    std::map<std::string, std::string>& descriptorProperty = descriptorConfig->GetConfig();
-    descriptorProperty["sigma"] = "1.0";
-    descriptorProperty["lambdaN"] = "1.0";
-
-    ClassifiersBase* classifier = ClassifiersFactory::GetClassifier(BasicClassifier);
-
-    pcl::PointCloud<pcl::PointXYZRGB>::Ptr colordCloud (new pcl::PointCloud<pcl::PointXYZRGB>);
-
-    for (size_t i = 0; i < cloud->points.size (); ++i)
-    {
-        if (isnan(cloud->points[i].x) || isnan(cloud->points[i].y) || isnan(cloud->points[i].z))
-        {
-            std::cout<<"The Point at : "<<i<<" NAN : "<<std::endl;
-            continue;
-        }
-
-        pcl::PointCloud<pcl::PointXYZ>::Ptr neighbourCloud = search->GetNeighbourCloud(cloud->points[i], option);
-        descriptor->setSource(cloud->points[i]);
-        descriptor->setCloud(neighbourCloud);
-
-        std::vector<ClassLabels> labels = classifier->Classify(descriptor);
-
-        std::cout<<"The Point at : "<<i<<" classified as : "<<labels.at(0)<<std::endl;
-
-        if (labels.at(0) == Point)
-        {
-            pcl::PointXYZRGB point = pcl::PointXYZRGB(255,0, 0);
-            point.x = cloud->points[i].x;
-            point.y = cloud->points[i].y;
-            point.z = cloud->points[i].z;
-            colordCloud->points.push_back(point);
-        }
-
-        if (labels.at(0) == Curve)
-        {
-            pcl::PointXYZRGB point = pcl::PointXYZRGB(0,255, 0);
-            point.x = cloud->points[i].x;
-            point.y = cloud->points[i].y;
-            point.z = cloud->points[i].z;
-            colordCloud->points.push_back(point);
-        }
-
-        if (labels.at(0) == Disc)
-        {
-            pcl::PointXYZRGB point = pcl::PointXYZRGB(0,0, 255);
-            point.x = cloud->points[i].x;
-            point.y = cloud->points[i].y;
-            point.z = cloud->points[i].z;
-            colordCloud->points.push_back(point);
-        }
-    }
-
-    pcl::visualization::CloudViewer viewer ("Colored Viewver");
-    viewer.showCloud(colordCloud);
-
-    while(!viewer.wasStopped())
-    {}
+    _filePath = fileName.toUtf8().constData();
 }
 
+// Method is invoked by OpenGL Widget to display in ViewPort
 void PCLAnalyzerWindow::display()
 {
-    PDisplay d;
-    d.Print();
+    if (displayCloud)
+    {
+        _view->Show();
+    }
 }
 
 PCLAnalyzerWindow::~PCLAnalyzerWindow()
 {
-    //delete ui;
+    delete ui;
 }

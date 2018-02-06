@@ -9,7 +9,7 @@ ControllerFactory::ControllerFactory()
 IControllerBase* ControllerFactory::GetController(std::string controllerName)
 {
     IControllerBase* controller = 0;
-    if (controllerName.compare("PROCESS"))
+    if (controllerName.compare("PROCESS") == 0)
         controller = new ProcessController();
 
     return controller;

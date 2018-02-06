@@ -4,12 +4,13 @@
 #include "ClassifierLabels.h"
 #include "Descriptors/DescriptorBase.h"
 #include "Config/Configuration.h"
+#include "Models/ViewModel.h"
 
 class ClassifiersBase
 {
 public:
     ClassifiersBase();
-    virtual std::vector<ClassLabels> Classify(DescriptorBase* descriptor) = 0 ;
+    virtual PointDescriptor Classify(DescriptorBase* descriptor) = 0 ;
     virtual Configuration* GetConfig() = 0;
 };
 

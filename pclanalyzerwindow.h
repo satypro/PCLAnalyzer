@@ -3,6 +3,24 @@
 
 #include <QMainWindow>
 #include <QTextEdit>
+#include <pcl/io/pcd_io.h>
+#include <pcl/point_types.h>
+#include <pcl/point_cloud.h>
+#include <pcl/common/common.h>
+#include <pcl/visualization/cloud_viewer.h>
+#include "Neighbours/SearchOptions.h"
+#include "Neighbours/SearchNeighbourBase.h"
+#include "Neighbours/SearchNeighbourOctTree.h"
+#include "Neighbours/SearchNeighbourFactory.h"
+#include "Descriptors/Descriptor.h"
+#include "Descriptors/DescriptorBase.h"
+#include "Descriptors/DescriptorFactory.h"
+#include "Classifiers/ClassifiersBase.h"
+#include "Classifiers/ClassifiersFactory.h"
+#include "Classifiers/ClassifierLabels.h"
+#include "Classifiers/ClassifierType.h"
+#include "Utilities/CommonUtility.h"
+#include "Views/IViews.h"
 
 namespace Ui {
 class PCLAnalyzerWindow;
@@ -20,12 +38,18 @@ public:
     void display();
     ~PCLAnalyzerWindow();
 public slots:
-    void clickedSlot();
+    void setFilePath();
+    void processCloud();
 
 private:
     Ui::PCLAnalyzerWindow *ui;
     QTextEdit *txt;
     GLWidget *glWidget;
+    std::string _filePath;
+    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud;
+    std::vector<ClassLabels> classLabels;
+    bool displayCloud = false;
+    IViews* _view;
 };
 
 #endif // PCLANALYZERWINDOW_H
