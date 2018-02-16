@@ -6,28 +6,16 @@
 #include <vector>
 #include "Types/datatypes.h"
 #include "Classifiers/ClassifierLabels.h"
+#include "Models/IViewModel.h"
+#include "Descriptors/IPointDescriptor.h"
 
 typedef pcl::PointCloud<pcl::PointXYZ>::Ptr CloudType;
 
-enum Colors
+class ViewModel : public IViewModel
 {
-    Red,
-    Green,
-    Blue
-};
-
-struct PointDescriptor
-{
-    probfeatnode featNode;
-    featProps    featProp;
-    glyphVars    glyph;
-    ClassLabels  label;
-};
-
-struct ViewModel
-{
+public:
     CloudType cloud;
-    std::vector<PointDescriptor> descriptor;
+    std::vector<IPointDescriptor*> descriptor;
 };
 
 #endif // VIEWMODEL_H

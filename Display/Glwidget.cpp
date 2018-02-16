@@ -77,9 +77,9 @@ void GLWidget :: getVersions(void)
 void GLWidget :: setInitSize(void)
 {
 #ifdef QT_OPENGL_ES_1
-    glOrthof(-1, 1, -1, 1, -100, 100) ;
+    glOrthof(-1, 1, -1, 1, -500, 500) ;
 #else
-    glOrtho(-1, 1, -1, 1, -100, 100) ;
+    glOrtho(-1, 1, -1, 1, -500, 500) ;
 #endif
 
 }

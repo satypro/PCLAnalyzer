@@ -66,7 +66,10 @@ HEADERS  += pclanalyzerwindow.h \
     Controllers/ControllerFactory.h \
     Display/FastTrackball.h \
     Display/Glwidget.h \
-    Config/Request.h
+    Config/Request.h \
+    Models/IViewModel.h \
+    Descriptors/IPointDescriptor.h \
+    Descriptors/PointDescriptor.h
 
 FORMS    += pclanalyzerwindow.ui \
     mainwindow.ui

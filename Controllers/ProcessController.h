@@ -8,7 +8,7 @@ class ProcessController : public IControllerBase
 {
 public:
     ProcessController();
-    ViewModel Process(std::map<std::string, std::string> request);
+    IViewModel* Process(std::map<std::string, std::string> request);
 };
 
 #endif // PROCESSCONTROLLER_H

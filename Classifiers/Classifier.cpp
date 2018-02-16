@@ -15,7 +15,7 @@ Configuration* Classifier::GetConfig()
     return _config;
 }
 
-PointDescriptor Classifier::Classify(DescriptorBase* descriptor)
+IPointDescriptor* Classifier::Classify(DescriptorBase* descriptor)
 {
     return descriptor->GeneratePointDescriptor();
 }

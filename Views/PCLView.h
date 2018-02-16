@@ -8,6 +8,9 @@ class PCLView : public IViews
 public:
     PCLView();
     void Show();
+    void SetViewModel(IViewModel* model);
+private:
+    ViewModel* model;
 };
 
 #endif // PCLVIEW_H

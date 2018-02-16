@@ -1,6 +1,6 @@
 #ifndef ICONTROLLER_H
 #define ICONTROLLER_H
-#include "Models/ViewModel.h"
+#include "Models/IViewModel.h"
 #include <map>
 #include <string>
 
@@ -11,7 +11,7 @@ public:
     {
 
     };
-    virtual ViewModel Process(std::map<std::string, std::string> request) = 0;
+    virtual IViewModel* Process(std::map<std::string, std::string> request) = 0;
 };
 
 #endif // ICONTROLLER_H

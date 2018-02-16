@@ -1,39 +1,48 @@
 #include "PCLView.h"
 #include <GL/gl.h>
+#include "Descriptors/PointDescriptor.h"
 
 PCLView::PCLView()
 {
+}
 
+void PCLView::SetViewModel(IViewModel* model)
+{
+    this->model = static_cast<ViewModel*>(model);
 }
 
 void PCLView::Show()
 {
     glBegin(GL_POINTS);
-    for (size_t i = 0; i < model.cloud->points.size (); ++i)
+    for (size_t i = 0; i < this->model->cloud->points.size (); ++i)
     {
-        if (isnan(model.cloud->points[i].x) || isnan(model.cloud->points[i].y) || isnan(model.cloud->points[i].z))
+        if (isnan(this->model->cloud->points[i].x) || isnan(this->model->cloud->points[i].y) || isnan(this->model->cloud->points[i].z))
         {
             std::cout<<"The Point at : "<<i<<" NAN : "<<std::endl;
             continue;
         }
+
+        // To Get the original descriptor
+        PointDescriptor* descriptor = static_cast<PointDescriptor*>(this->model->descriptor.at(i));
+
         glColor3f(0, 0, 0);
 
-        if (model.descriptor.at(i).label == Point)
+        if (descriptor->label == Point)
         {
             //glColor3f(255, 0, 0);
         }
 
-        if (model.descriptor.at(i).label  == Curve)
+        if (descriptor->label  == Curve)
         {
             glColor3f(0, 255, 0);
         }
 
-        if (model.descriptor.at(i).label  == Disc)
+        if (descriptor->label  == Disc)
         {
             glColor3f(0, 0, 255);
         }
 
-        glVertex3f(model.cloud->points[i].x, model.cloud->points[i].y, model.cloud->points[i].z);
+        glVertex3f(this->model->cloud->points[i].x, this->model->cloud->points[i].y, this->model->cloud->points[i].z);
     }
     glEnd();
 }

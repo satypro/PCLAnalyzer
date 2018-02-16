@@ -6,7 +6,7 @@ class Classifier : public ClassifiersBase
 {
 public:
     Classifier();
-    PointDescriptor Classify(DescriptorBase* descriptor);
+    IPointDescriptor* Classify(DescriptorBase* descriptor);
     Configuration* GetConfig();
 private:
     Configuration* _config;

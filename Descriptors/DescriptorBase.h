@@ -5,14 +5,14 @@
 #include <pcl/point_cloud.h>
 #include "Types/datatypes.h"
 #include "Config/Configuration.h"
-#include "Models/ViewModel.h"
+#include "IPointDescriptor.h"
 
 class DescriptorBase
 {
 public:
     DescriptorBase(){ }
 
-    virtual PointDescriptor GeneratePointDescriptor() = 0 ;
+    virtual IPointDescriptor* GeneratePointDescriptor() = 0 ;
 
     virtual Configuration* GetConfig() = 0;
 

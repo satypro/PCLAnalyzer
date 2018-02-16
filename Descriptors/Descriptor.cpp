@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include "Utilities/eig3.h"
 #include <teem/ten.h>
+#include "PointDescriptor.h"
 
 Descriptor::Descriptor()
 {
@@ -17,9 +18,9 @@ Configuration* Descriptor::GetConfig()
     return _config;
 }
 
-PointDescriptor Descriptor::GeneratePointDescriptor()
+IPointDescriptor* Descriptor::GeneratePointDescriptor()
 {
-    PointDescriptor pointDescriptor;
+    PointDescriptor* pointDescriptor = new PointDescriptor;
 
     char* pEnd;
     float _epsi = ::strtof(_config->GetValue("epsi").c_str(), &pEnd);
@@ -27,53 +28,53 @@ PointDescriptor Descriptor::GeneratePointDescriptor()
     float _rmax = ::strtof(_config->GetValue("rmax").c_str(), &pEnd);
     float radius = ::strtof(_config->GetValue("radius").c_str(), &pEnd);
 
-
     TensorType T = Get3DVotingTensor();
     glyphVars glyph = EigenDecomposition(T);
+
     computeSaliencyVals(glyph);
     glyphAnalysis(glyph);
-    pointDescriptor.glyph = glyph;
+    pointDescriptor->glyph = glyph;
 
     if(glyph.evals[2] == 0.0 && glyph.evals[1] == 0.0 && glyph.evals[0] == 0.0)
     {
-        pointDescriptor.featNode.prob[0] = pointDescriptor.featNode.prob[0] + 1;
+        pointDescriptor->featNode.prob[0] = pointDescriptor->featNode.prob[0] + 1;
     }
     else
     {
         if(glyph.evals[2] >= _epsi * glyph.evals[0]) //ev0>ev1>ev2
-            pointDescriptor.featNode.prob[0] =pointDescriptor.featNode.prob[0] + 1;
+            pointDescriptor->featNode.prob[0] = pointDescriptor->featNode.prob[0] + 1;
 
         if(glyph.evals[1] < _epsi * glyph.evals[0]) //ev0>ev1>ev2
-            pointDescriptor.featNode.prob[1] =pointDescriptor.featNode.prob[1] + 1;
+            pointDescriptor->featNode.prob[1] = pointDescriptor->featNode.prob[1] + 1;
 
         if(glyph.evals[2] < _epsi * glyph.evals[0])  //ev0>ev1>ev2
-            pointDescriptor.featNode.prob[2] =pointDescriptor.featNode.prob[2] + 1;
+            pointDescriptor->featNode.prob[2] = pointDescriptor->featNode.prob[2] + 1;
 
-        pointDescriptor.featNode.featStrength[0] += ((glyph.evals[2] * glyph.evals[1])/(glyph.evals[0] * glyph.evals[0]));
-        pointDescriptor.featNode.featStrength[1] += ((glyph.evals[2] * (glyph.evals[0] - glyph.evals[1]))/(glyph.evals[0] * glyph.evals[1]));
-        pointDescriptor.featNode.featStrength[2] +=  glyph.evals[2] /(glyph.evals[0] + glyph.evals[1] + glyph.evals[2]);
+        pointDescriptor->featNode.featStrength[0] += ((glyph.evals[2] * glyph.evals[1])/(glyph.evals[0] * glyph.evals[0]));
+        pointDescriptor->featNode.featStrength[1] += ((glyph.evals[2] * (glyph.evals[0] - glyph.evals[1]))/(glyph.evals[0] * glyph.evals[1]));
+        pointDescriptor->featNode.featStrength[2] +=  glyph.evals[2] /(glyph.evals[0] + glyph.evals[1] + glyph.evals[2]);
     }
 
-    pointDescriptor.featNode.csclcp[0] += glyph.csclcp[0];
-    pointDescriptor.featNode.csclcp[1] += glyph.csclcp[1];
-    pointDescriptor.featNode.csclcp[2] += glyph.csclcp[2];
+    pointDescriptor->featNode.csclcp[0] += glyph.csclcp[0];
+    pointDescriptor->featNode.csclcp[1] += glyph.csclcp[1];
+    pointDescriptor->featNode.csclcp[2] += glyph.csclcp[2];
 
-    pointDescriptor.featNode.sum_eigen = glyph.evals[0] + glyph.evals[1] + glyph.evals[2];
-    pointDescriptor.featNode.evecs[0] = glyph.evecs[0];
-    pointDescriptor.featNode.evecs[1] = glyph.evecs[1];
-    pointDescriptor.featNode.evecs[2] = glyph.evecs[2];
+    pointDescriptor->featNode.sum_eigen = glyph.evals[0] + glyph.evals[1] + glyph.evals[2];
+    pointDescriptor->featNode.evecs[0] = glyph.evecs[0];
+    pointDescriptor->featNode.evecs[1] = glyph.evecs[1];
+    pointDescriptor->featNode.evecs[2] = glyph.evecs[2];
 
     if (radius == _rmin)
     {
-        pointDescriptor.featNode.evecs[3] = glyph.evecs[6];
-        pointDescriptor.featNode.evecs[4] = glyph.evecs[7];
-        pointDescriptor.featNode.evecs[5] = glyph.evecs[8];
+        pointDescriptor->featNode.evecs[3] = glyph.evecs[6];
+        pointDescriptor->featNode.evecs[4] = glyph.evecs[7];
+        pointDescriptor->featNode.evecs[5] = glyph.evecs[8];
     }
     else if (radius == _rmax)
     {
-        pointDescriptor.featNode.evecs[6] = glyph.evecs[6];
-        pointDescriptor.featNode.evecs[7] = glyph.evecs[7];
-        pointDescriptor.featNode.evecs[8] = glyph.evecs[8];
+        pointDescriptor->featNode.evecs[6] = glyph.evecs[6];
+        pointDescriptor->featNode.evecs[7] = glyph.evecs[7];
+        pointDescriptor->featNode.evecs[8] = glyph.evecs[8];
     }
 
     if(glyph.evals[0] != 0)
@@ -83,26 +84,26 @@ PointDescriptor Descriptor::GeneratePointDescriptor()
         float lamda1 = glyph.evals[1] / len;
         float lamda2 = glyph.evals[2] / len;
 
-        pointDescriptor.featNode.planarity  += (glyph.evals[0] - glyph.evals[1]) / glyph.evals[0];
-        pointDescriptor.featNode.anisotropy += (glyph.evals[1] - glyph.evals[2]) / glyph.evals[0];
-        pointDescriptor.featNode.sphericity += (glyph.evals[0] - glyph.evals[2]) / glyph.evals[0];
+        pointDescriptor->featNode.planarity  += (glyph.evals[0] - glyph.evals[1]) / glyph.evals[0];
+        pointDescriptor->featNode.anisotropy += (glyph.evals[1] - glyph.evals[2]) / glyph.evals[0];
+        pointDescriptor->featNode.sphericity += (glyph.evals[0] - glyph.evals[2]) / glyph.evals[0];
 
-        pointDescriptor.featNode.linearity += (glyph.evals[0] - glyph.evals[1]) / glyph.evals[0];
-        pointDescriptor.featNode.omnivariance += cbrt(glyph.evals[1] * glyph.evals[2] * glyph.evals[0]);
-        pointDescriptor.featNode.eigenentropy += -1*(glyph.evals[0]*log(glyph.evals[0]) + glyph.evals[1]*log(glyph.evals[1]) + glyph.evals[2]*log(glyph.evals[2]));
+        pointDescriptor->featNode.linearity += (glyph.evals[0] - glyph.evals[1]) / glyph.evals[0];
+        pointDescriptor->featNode.omnivariance += cbrt(glyph.evals[1] * glyph.evals[2] * glyph.evals[0]);
+        pointDescriptor->featNode.eigenentropy += -1*(glyph.evals[0]*log(glyph.evals[0]) + glyph.evals[1]*log(glyph.evals[1]) + glyph.evals[2]*log(glyph.evals[2]));
 
-        pointDescriptor.featNode.eigenvalues[0] = lamda0;
-        pointDescriptor.featNode.eigenvalues[1] = lamda1;
-        pointDescriptor.featNode.eigenvalues[2] = lamda2;
+        pointDescriptor->featNode.eigenvalues[0] = lamda0;
+        pointDescriptor->featNode.eigenvalues[1] = lamda1;
+        pointDescriptor->featNode.eigenvalues[2] = lamda2;
     }
     else
     {
-        pointDescriptor.featNode.planarity = 0;
-        pointDescriptor.featNode.anisotropy = 0;
-        pointDescriptor.featNode.sphericity = 0;
-        pointDescriptor.featNode.linearity = 0;
-        pointDescriptor.featNode.omnivariance = 0;
-        pointDescriptor.featNode.eigenentropy = 0;
+        pointDescriptor->featNode.planarity = 0;
+        pointDescriptor->featNode.anisotropy = 0;
+        pointDescriptor->featNode.sphericity = 0;
+        pointDescriptor->featNode.linearity = 0;
+        pointDescriptor->featNode.omnivariance = 0;
+        pointDescriptor->featNode.eigenentropy = 0;
     }
 
     float A[3][3], V[3][3], d[3];
@@ -135,25 +136,25 @@ PointDescriptor Descriptor::GeneratePointDescriptor()
 
     if (result.EigenValues(0,0) == 0.0 && result.EigenValues(2,0) == 0.0  && result.EigenValues(1,0) == 0.0 )
     {
-        pointDescriptor.label = Point;
+        pointDescriptor->label = Point;
         return pointDescriptor;
     }
 
     if (0.5 * result.EigenValues(0,0) <= result.EigenValues(2,0))
     {
-        pointDescriptor.label = Point;
+        pointDescriptor->label = Point;
         return pointDescriptor;
     }
 
     if (0.5 * result.EigenValues(0,0) > result.EigenValues(1,0))
     {
-        pointDescriptor.label = Curve;
+        pointDescriptor->label = Curve;
         return pointDescriptor;
     }
 
     if (0.5 * result.EigenValues(0,0) > result.EigenValues(2,0))
     {
-        pointDescriptor.label = Disc;
+        pointDescriptor->label = Disc;
         return pointDescriptor;
     }
 
@@ -319,65 +320,65 @@ TensorType Descriptor::Compute3DBallVote(Eigen::Matrix<double, 3, 1> V, float *w
 
 glyphVars Descriptor::EigenDecomposition(TensorType tensor)
 {
-        glyphVars glyph;
+    glyphVars glyph;
 
-        float A[3][3], V[3][3], d[3];
-        Eigen::Vector3f eigen_values;
-        metaVelData diffVel;
+    float A[3][3], V[3][3], d[3];
+    Eigen::Vector3f eigen_values;
+    metaVelData diffVel;
 
-        for(int i = 0; i < 3; i++)
-        {
-            A[i][0] = tensor.evec0[i];
-            A[i][1] = tensor.evec1[i];
-            A[i][2] = tensor.evec2[i];
-        }
+    for(int i = 0; i < 3; i++)
+    {
+        A[i][0] = tensor.evec0[i];
+        A[i][1] = tensor.evec1[i];
+        A[i][2] = tensor.evec2[i];
+    }
 
-        eigen_decomposition(A, V, d); //d[2] > d[1] > d[0]
+    eigen_decomposition(A, V, d); //d[2] > d[1] > d[0]
 
-        eigen_values[0] = d[0] ;
-        eigen_values[1] = d[1] ;
-        eigen_values[2] = d[2] ;
+    eigen_values[0] = d[0] ;
+    eigen_values[1] = d[1] ;
+    eigen_values[2] = d[2] ;
 
-        float len = d[0] + d[1] + d[2];
-        // lamda0>lambda1>lambda2
-        float lamda0 = d[2] / len;
-        float lamda1 = d[1] / len;
-        float lamda2 = d[0] / len;
-        Eigen::MatrixXf e0(3,1);
-        e0 << V[0][2],V[1][2],V[2][2];
-        e0.normalize();
-        Eigen::MatrixXf e1(3,1);
-        e1 << V[0][1],V[1][1],V[2][1];
-        e1.normalize();
-        Eigen::MatrixXf e2(3,1);
-        e2 << V[0][0],V[1][0],V[2][0];
-        e2.normalize();
-        Eigen::Matrix3f T;
-        T << 0,0,0,0,0,0,0,0,0;
+    float len = d[0] + d[1] + d[2];
+    // lamda0>lambda1>lambda2
+    float lamda0 = d[2] / len;
+    float lamda1 = d[1] / len;
+    float lamda2 = d[0] / len;
+    Eigen::MatrixXf e0(3,1);
+    e0 << V[0][2],V[1][2],V[2][2];
+    e0.normalize();
+    Eigen::MatrixXf e1(3,1);
+    e1 << V[0][1],V[1][1],V[2][1];
+    e1.normalize();
+    Eigen::MatrixXf e2(3,1);
+    e2 << V[0][0],V[1][0],V[2][0];
+    e2.normalize();
+    Eigen::Matrix3f T;
+    T << 0,0,0,0,0,0,0,0,0;
 
-        T += lamda0 * e0 * e0.transpose();
-        T += lamda1 * e1 * e1.transpose();
-        T += lamda2 * e2 * e2.transpose();
+    T += lamda0 * e0 * e0.transpose();
+    T += lamda1 * e1 * e1.transpose();
+    T += lamda2 * e2 * e2.transpose();
 
-        getdiffusionvelocity(eigen_values, &diffVel);
+    getdiffusionvelocity(eigen_values, &diffVel);
 
-        glyph.evals[2] = diffVel.vel[0];       //evals0>evals>1>evals2  //vel2>vel1>vel0
-        glyph.evals[1] = diffVel.vel[1];
-        glyph.evals[0] = diffVel.vel[2];
+    glyph.evals[2] = diffVel.vel[0];       //evals0>evals>1>evals2  //vel2>vel1>vel0
+    glyph.evals[1] = diffVel.vel[1];
+    glyph.evals[0] = diffVel.vel[2];
 
-        glyph.evecs[0] = V[0][diffVel.index[2]];
-        glyph.evecs[1] = V[1][diffVel.index[2]] ;
-        glyph.evecs[2] = V[2][diffVel.index[2]];
+    glyph.evecs[0] = V[0][diffVel.index[2]];
+    glyph.evecs[1] = V[1][diffVel.index[2]] ;
+    glyph.evecs[2] = V[2][diffVel.index[2]];
 
-        glyph.evecs[3] = V[0][diffVel.index[1]];
-        glyph.evecs[4] = V[1][diffVel.index[1]] ;
-        glyph.evecs[5] = V[2][diffVel.index[1]];
+    glyph.evecs[3] = V[0][diffVel.index[1]];
+    glyph.evecs[4] = V[1][diffVel.index[1]] ;
+    glyph.evecs[5] = V[2][diffVel.index[1]];
 
-        glyph.evecs[6] = V[0][diffVel.index[0]];
-        glyph.evecs[7] = V[1][diffVel.index[0]] ;
-        glyph.evecs[8] = V[2][diffVel.index[0]];
+    glyph.evecs[6] = V[0][diffVel.index[0]];
+    glyph.evecs[7] = V[1][diffVel.index[0]] ;
+    glyph.evecs[8] = V[2][diffVel.index[0]];
 
-        return glyph;
+    return glyph;
 }
 
 void Descriptor::getdiffusionvelocity(Eigen::Vector3f evals, metaVelData *diffVel)
@@ -425,33 +426,33 @@ void Descriptor::computeSaliencyVals(glyphVars& glyph)
 
 void Descriptor::glyphAnalysis(glyphVars& glyph)
 {
-        double eps=1e-4;
-        double evals[3], uv[2], abc[3];
+    double eps=1e-4;
+    double evals[3], uv[2], abc[3];
 
-        double norm = sqrt(glyph.evals[2] * glyph.evals[2] + glyph.evals[1]*glyph.evals[1] + glyph.evals[0] *glyph.evals[0]);
+    double norm = sqrt(glyph.evals[2] * glyph.evals[2] + glyph.evals[1]*glyph.evals[1] + glyph.evals[0] *glyph.evals[0]);
 
-        evals[0] = glyph.evals[2];   //ev0>ev1>ev2    //evals0>evals>1>evals2
-        evals[1] = glyph.evals[1];
-        evals[2] = glyph.evals[0];
+    evals[0] = glyph.evals[2];   //ev0>ev1>ev2    //evals0>evals>1>evals2
+    evals[1] = glyph.evals[1];
+    evals[2] = glyph.evals[0];
 
-        //tenGlyphBqdUvEval(uv, evals);
-        //tenGlyphBqdAbcUv(abc, uv, 0.0);  // 3.0 for superquadric glyph, 0.0 for ellpsoid
+    //tenGlyphBqdUvEval(uv, evals);
+    //tenGlyphBqdAbcUv(abc, uv, 0.0);  // 3.0 for superquadric glyph, 0.0 for ellpsoid
 
-        norm=ELL_3V_LEN(evals);
+    norm=ELL_3V_LEN(evals);
 
-        if (norm<eps)
-        {
-          double weight=norm/eps;
-          abc[0]=weight*abc[0]+(1-weight);
-          abc[1]=weight*abc[1]+(1-weight);
-          abc[2]=weight*abc[2]+(1-weight);
-        }
+    if (norm<eps)
+    {
+      double weight=norm/eps;
+      abc[0]=weight*abc[0]+(1-weight);
+      abc[1]=weight*abc[1]+(1-weight);
+      abc[2]=weight*abc[2]+(1-weight);
+    }
 
-        glyph.uv[0] = uv[0];
-        glyph.uv[1] = uv[1];
+    glyph.uv[0] = uv[0];
+    glyph.uv[1] = uv[1];
 
-        glyph.abc[0] = abc[0];
-        glyph.abc[1] = abc[1];
-        glyph.abc[2] = abc[2];
+    glyph.abc[0] = abc[0];
+    glyph.abc[1] = abc[1];
+    glyph.abc[2] = abc[2];
 }
 /*End the private method region */

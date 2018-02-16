@@ -17,20 +17,21 @@
 #include "Classifiers/ClassifierType.h"
 #include "Utilities/CommonUtility.h"
 #include "IO/FileRead.h"
+#include "Models/ViewModel.h"
 #include <math.h>
 
 ProcessController::ProcessController()
 {
 }
 
-ViewModel ProcessController::Process(std::map<std::string, std::string> request)
+IViewModel* ProcessController::Process(std::map<std::string, std::string> request)
 {
     std::vector <float> _intensity;
     pcl::PointCloud<pcl::PointXYZ>::Ptr _tempCloud (new pcl::PointCloud<pcl::PointXYZ>);
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ>);
 
     std::string _filePath =  request["filePath"];
-    ViewModel model;
+    ViewModel* model = new ViewModel;
 
     if(_filePath == "NULL")
     {
@@ -78,7 +79,7 @@ ViewModel ProcessController::Process(std::map<std::string, std::string> request)
     ClassifiersBase* classifier = ClassifiersFactory::GetClassifier(BasicClassifier);
 
 
-    model.cloud = cloud;
+    model->cloud = cloud;
 
     size_t size = cloud->points.size ();
 
@@ -94,11 +95,10 @@ ViewModel ProcessController::Process(std::map<std::string, std::string> request)
         descriptor->setSource(cloud->points[i]);
         descriptor->setCloud(neighbourCloud);
 
-        PointDescriptor pointdescriptor = classifier->Classify(descriptor);
+        IPointDescriptor* pointdescriptor = classifier->Classify(descriptor);
         std::cout<<"Progress : "<<ceil(((float)i/(float)size)*100)<<"%"<<std::endl;
 
-        pointdescriptor.label = pointdescriptor.label;
-        model.descriptor.push_back(pointdescriptor);
+        model->descriptor.push_back(pointdescriptor);
     }
 
     return model;
