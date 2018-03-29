@@ -8,9 +8,6 @@
 #include "Neighbours/SearchNeighbourBase.h"
 #include "Neighbours/SearchNeighbourOctTree.h"
 #include "Neighbours/SearchNeighbourFactory.h"
-#include "Descriptors/Descriptor.h"
-#include "Descriptors/DescriptorBase.h"
-#include "Descriptors/DescriptorFactory.h"
 #include "Classifiers/ClassifiersBase.h"
 #include "Classifiers/ClassifiersFactory.h"
 #include "Classifiers/ClassifierLabels.h"
@@ -65,19 +62,16 @@ IViewModel* ProcessController::Process(std::map<std::string, std::string> reques
     SearchNeighbourBase* search = SearchNeighbourFactory::GetNeighbourSearchDataStructure(OctTree);
     search->Build(cloud, scale.resolution);
 
-    DescriptorBase* descriptor =  DescriptorFactory::GetDescriptor();
-    Configuration* descriptorConfig = descriptor->GetConfig();
-    std::map<std::string, std::string>& descriptorProperty = descriptorConfig->GetConfig();
-    descriptorProperty["sigma"] = "1.0";
-    descriptorProperty["lambdaN"] = "1.0";
-    descriptorProperty["delta"] = "0.16";
-    descriptorProperty["epsi"] = "0.5";
-    descriptorProperty["rmin"] = "0.1";
-    descriptorProperty["rmax"] = "0.2";
-    descriptorProperty["radius"] = "0.01";
-
     ClassifiersBase* classifier = ClassifiersFactory::GetClassifier(BasicClassifier);
-
+    Configuration* classifierConfig = classifier->GetConfig();
+    std::map<std::string, std::string>& classifierParameter = classifierConfig->GetConfig();
+    classifierParameter["sigma"] = "1.0";
+    classifierParameter["lambdaN"] = "1.0";
+    classifierParameter["delta"] = "0.16";
+    classifierParameter["epsi"] = "0.5";
+    classifierParameter["rmin"] = "0.1";
+    classifierParameter["rmax"] = "0.2";
+    classifierParameter["radius"] = "0.01";
 
     model->cloud = cloud;
 
@@ -92,10 +86,10 @@ IViewModel* ProcessController::Process(std::map<std::string, std::string> reques
         }
 
         pcl::PointCloud<pcl::PointXYZ>::Ptr neighbourCloud = search->GetNeighbourCloud(cloud->points[i], option);
-        descriptor->setSource(cloud->points[i]);
-        descriptor->setCloud(neighbourCloud);
 
-        IPointDescriptor* pointdescriptor = classifier->Classify(descriptor);
+        classifier->setSource(cloud->points[i]);
+        classifier->setCloud(neighbourCloud);
+        IPointDescriptor* pointdescriptor = classifier->Classify();
         std::cout<<"Progress : "<<ceil(((float)i/(float)size)*100)<<"%"<<std::endl;
 
         model->descriptor.push_back(pointdescriptor);

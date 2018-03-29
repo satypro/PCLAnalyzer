@@ -31,54 +31,42 @@ PCLAnalyzerWindow::PCLAnalyzerWindow(QWidget *parent) :
     
     QObject::connect(btnGetFile, SIGNAL(clicked()),this, SLOT(setFilePath()));
     btnGetFile->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
-    
 
+    QAction *action_Open = new QAction(this);
+    // action_Open->setObjectName(QString::fromUtf8("action_Open"));
+    action_Open->setText(tr("Open"));
+    // action_Open->setIcon(ICON_OPEN);
+    action_Open->setShortcut(tr("Ctrl+F"));
+    action_Open->setStatusTip(tr("Open file"));
+    connect(action_Open, SIGNAL(triggered()), this, SLOT(setFilePath()));
 
-       QAction *action_Open = new QAction(this);
-      // action_Open->setObjectName(QString::fromUtf8("action_Open"));
-       action_Open->setText(tr("Open"));
-      // action_Open->setIcon(ICON_OPEN);
-       action_Open->setShortcut(tr("Ctrl+F"));
-       action_Open->setStatusTip(tr("Open file"));
-       connect(action_Open, SIGNAL(triggered()), this, SLOT(setFilePath()));
+    QAction *exitAct = new QAction(tr("E&xit"), this);
+    exitAct->setShortcuts(QKeySequence::Quit);
+    connect(exitAct, SIGNAL(triggered()), this, SLOT(close()));
 
-       QAction *exitAct = new QAction(tr("E&xit"), this);
-       exitAct->setShortcuts(QKeySequence::Quit);
-       connect(exitAct, SIGNAL(triggered()), this, SLOT(close()));
+    QMenu *fileMenu = fileMenu = menuBar()->addMenu(tr("&File"));
 
-       QMenu *fileMenu = fileMenu = menuBar()->addMenu(tr("&File"));
+    fileMenu->addAction(action_Open);
+    fileMenu->addSeparator();
+    fileMenu->addAction(exitAct);
 
-       fileMenu->addAction(action_Open);
-       fileMenu->addSeparator();
-       fileMenu->addAction(exitAct);
+    QComboBox* tensorType = new QComboBox();
+    // Fill the items of the ComboBox
+    tensorType->addItem("3DVT-GET");
+    tensorType->addItem("3DVT");
+    tensorType->addItem("3DCM");
+    tensorType->addItem("3DMCM");
+    tensorType->addItem("2DGET");
+    tensorType->addItem("Hessian");
+    tensorType->addItem("2DCM");
 
+    QGroupBox *previewGroupBox;
+    previewGroupBox = new QGroupBox(tr("Parameters"));
+    setStyleSheet(QString::fromUtf8("QGroupBox { border: 2px solid red; margin-bottom: 7px;margin-right: 7px; padding: 5px} QGroupBox::title {top:7 ex;left: 10px; subcontrol-origin: border}"));
 
-       QComboBox* tensorType = new QComboBox();
-           // Fill the items of the ComboBox
-           tensorType->addItem("3DVT-GET");
-           tensorType->addItem("3DVT");
-           tensorType->addItem("3DCM");
-           tensorType->addItem("3DMCM");
-           tensorType->addItem("2DGET");
-           tensorType->addItem("Hessian");
-           tensorType->addItem("2DCM");
-
-         QGroupBox *previewGroupBox;
-         previewGroupBox = new QGroupBox(tr("Parameters"));
-            setStyleSheet(QString::fromUtf8("QGroupBox { border: 2px solid red; margin-bottom: 7px;margin-right: 7px; padding: 5px} QGroupBox::title {top:7 ex;left: 10px; subcontrol-origin: border}"));
-
-        QGridLayout *previewLayout = new QGridLayout;
-
-         previewLayout->addWidget(tensorType);
-        previewGroupBox->setLayout(previewLayout);
-
-
-
-
-
-
-
-
+    QGridLayout *previewLayout = new QGridLayout;
+    previewLayout->addWidget(tensorType);
+    previewGroupBox->setLayout(previewLayout);
 
     QPushButton *btnReadCloud = new QPushButton(this);
     btnReadCloud->setText("Process Cloud");
@@ -87,7 +75,6 @@ PCLAnalyzerWindow::PCLAnalyzerWindow(QWidget *parent) :
 
     QObject::connect(btnReadCloud, SIGNAL(clicked()),this, SLOT(processCloud()));
     btnReadCloud->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
-
 
     QWidget* centralWidget = new QWidget(this);
     centralWidget->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
@@ -104,12 +91,6 @@ PCLAnalyzerWindow::PCLAnalyzerWindow(QWidget *parent) :
     layout->addLayout(hLayout2);
 
 
-    QDockWidget *dock1;
-        dock1 = new QDockWidget(tr(""), this);
-        dock1->setAllowedAreas(Qt::RightDockWidgetArea);
-        dock1->setFloating(false);
-        addDockWidget(Qt::RightDockWidgetArea, dock1);
-        dock1->setWidget(previewGroupBox);
 
     QDockWidget *dock;
     dock = new QDockWidget(tr(""), this);
@@ -118,7 +99,12 @@ PCLAnalyzerWindow::PCLAnalyzerWindow(QWidget *parent) :
     addDockWidget(Qt::RightDockWidgetArea, dock);
     dock->setWidget(centralWidget);
 
-
+    QDockWidget *dock1;
+    dock1 = new QDockWidget(tr(""), this);
+    dock1->setAllowedAreas(Qt::RightDockWidgetArea);
+    dock1->setFloating(false);
+    addDockWidget(Qt::RightDockWidgetArea, dock1);
+    dock1->setWidget(previewGroupBox);
 
 }
 

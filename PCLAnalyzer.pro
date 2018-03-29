@@ -21,8 +21,6 @@ SOURCES += main.cpp\
         pclanalyzerwindow.cpp \
     Neighbours/SearchNeighbourOctTree.cpp \
     Neighbours/SearchNeighbourFactory.cpp \
-    Descriptors/DescriptorFactory.cpp \
-    Descriptors/Descriptor.cpp \
     Utilities/CommonUtility.cpp \
     Classifiers/Classifier.cpp \
     Classifiers/ClassifiersBase.cpp \
@@ -36,14 +34,18 @@ SOURCES += main.cpp\
     Controllers/ControllerFactory.cpp \
     Display/FastTrackball.cpp \
     Display/Glwidget.cpp \
-    Config/Request.cpp
+    Config/Request.cpp \
+    Classifiers/Tensor2DClassifier.cpp \
+    Classifiers/Tensor3DVotingClassifier.cpp \
+    Classifiers/ModCovarianceMatrixClassifier.cpp \
+    Classifiers/DiffusedNormalVotingClassifier.cpp \
+    Classifiers/CovarianceMatrix2DClassifier.cpp \
+    Classifiers/CovarianceMatrixClassifier.cpp \
+    Classifiers/BoundaryTensorClassifier.cpp
 
 HEADERS  += pclanalyzerwindow.h \
     Neighbours/SearchNeighbourOctTree.h \
     Neighbours/SearchNeighbourFactory.h \
-    Descriptors/DescriptorFactory.h \
-    Descriptors/DescriptorBase.h \
-    Descriptors/Descriptor.h \
     Types/datatypes.h \
     Neighbours/SearchOptions.h \
     Neighbours/SearchNeighbourBase.h \
@@ -69,7 +71,14 @@ HEADERS  += pclanalyzerwindow.h \
     Config/Request.h \
     Models/IViewModel.h \
     Descriptors/IPointDescriptor.h \
-    Descriptors/PointDescriptor.h
+    Descriptors/PointDescriptor.h \
+    Classifiers/Tensor2DClassifier.h \
+    Classifiers/Tensor3DVotingClassifier.h \
+    Classifiers/ModCovarianceMatrixClassifier.h \
+    Classifiers/DiffusedNormalVotingClassifier.h \
+    Classifiers/CovarianceMatrix2DClassifier.h \
+    Classifiers/CovarianceMatrixClassifier.h \
+    Classifiers/BoundaryTensorClassifier.h
 
 FORMS    += pclanalyzerwindow.ui \
     mainwindow.ui
