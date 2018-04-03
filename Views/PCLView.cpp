@@ -42,7 +42,9 @@ void PCLView::Show()
             glColor3f(0, 0, 255);
         }
 
-        glVertex3f(this->model->cloud->points[i].x, this->model->cloud->points[i].y, this->model->cloud->points[i].z);
+        glVertex3f(this->model->cloud->points[i].x,
+                   this->model->cloud->points[i].y,
+                   this->model->cloud->points[i].z);
     }
     glEnd();
 }

@@ -11,6 +11,9 @@
 #include "Display/Glwidget.h"
 #include "Controllers/MainController.h"
 #include "Config/Request.h"
+#include "UI/Component/StructureParameterWidget.h"
+#include "UI/Widgets/ParameterWidget.h"
+#include "boost/lexical_cast.hpp"
 
 PCLAnalyzerWindow::PCLAnalyzerWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -22,23 +25,21 @@ PCLAnalyzerWindow::PCLAnalyzerWindow(QWidget *parent) :
     setWindowTitle(tr("Point Cloud Visualization Board"));
 
     QPushButton *btnGetFile = new QPushButton(this);
-    txt = new QTextEdit();
-    
     btnGetFile->setText("Select File");
     btnGetFile->setFixedWidth(100);
     btnGetFile->setFixedHeight(30);
+
+    txt = new QTextEdit();
     txt->setFixedHeight(30);
     
-    QObject::connect(btnGetFile, SIGNAL(clicked()),this, SLOT(setFilePath()));
+    QObject::connect(btnGetFile, SIGNAL(clicked()),this, SLOT(SetFilePath()));
     btnGetFile->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
 
     QAction *action_Open = new QAction(this);
-    // action_Open->setObjectName(QString::fromUtf8("action_Open"));
     action_Open->setText(tr("Open"));
-    // action_Open->setIcon(ICON_OPEN);
     action_Open->setShortcut(tr("Ctrl+F"));
     action_Open->setStatusTip(tr("Open file"));
-    connect(action_Open, SIGNAL(triggered()), this, SLOT(setFilePath()));
+    connect(action_Open, SIGNAL(triggered()), this, SLOT(SetFilePath()));
 
     QAction *exitAct = new QAction(tr("E&xit"), this);
     exitAct->setShortcuts(QKeySequence::Quit);
@@ -50,7 +51,7 @@ PCLAnalyzerWindow::PCLAnalyzerWindow(QWidget *parent) :
     fileMenu->addSeparator();
     fileMenu->addAction(exitAct);
 
-    QComboBox* tensorType = new QComboBox();
+    tensorType = new QComboBox();
     // Fill the items of the ComboBox
     tensorType->addItem("3DVT-GET");
     tensorType->addItem("3DVT");
@@ -59,12 +60,18 @@ PCLAnalyzerWindow::PCLAnalyzerWindow(QWidget *parent) :
     tensorType->addItem("2DGET");
     tensorType->addItem("Hessian");
     tensorType->addItem("2DCM");
+    connect(tensorType, SIGNAL (currentIndexChanged(int)), this, SLOT (SetTensorType(int)));
 
+    setStyleSheet(QString::fromUtf8("QGroupBox { border: 2px solid red; margin-bottom: 7px;margin-right: 7px; padding: 5px} QGroupBox::title {top:7 ex;left: 10px; subcontrol-origin: border}"));
     QGroupBox *previewGroupBox;
     previewGroupBox = new QGroupBox(tr("Parameters"));
-    setStyleSheet(QString::fromUtf8("QGroupBox { border: 2px solid red; margin-bottom: 7px;margin-right: 7px; padding: 5px} QGroupBox::title {top:7 ex;left: 10px; subcontrol-origin: border}"));
 
+    QGroupBox *structureParameterGroupBox;
+    structureParameterGroupBox = new QGroupBox(tr("Structure Classificaton Hyper Parameters"));
+
+    parameterWidget = new ParameterWidget(this);
     QGridLayout *previewLayout = new QGridLayout;
+    previewLayout->addWidget(parameterWidget);
     previewLayout->addWidget(tensorType);
     previewGroupBox->setLayout(previewLayout);
 
@@ -72,24 +79,53 @@ PCLAnalyzerWindow::PCLAnalyzerWindow(QWidget *parent) :
     btnReadCloud->setText("Process Cloud");
     btnReadCloud->setFixedWidth(100);
     btnReadCloud->setFixedHeight(30);
-
-    QObject::connect(btnReadCloud, SIGNAL(clicked()),this, SLOT(processCloud()));
+    QObject::connect(btnReadCloud, SIGNAL(clicked()),this, SLOT(ProcessCloud()));
     btnReadCloud->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
 
-    QWidget* centralWidget = new QWidget(this);
-    centralWidget->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
+    //QWidget* centralWidget = new QWidget(this);
+    //centralWidget->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
     
-    QVBoxLayout* layout = new QVBoxLayout(centralWidget);
-    QHBoxLayout* hLayout = new QHBoxLayout(centralWidget);
+    QVBoxLayout* structureClassifierlayout = new QVBoxLayout;
+
+    structreParameterWidget = new StructureParameterWidget(this);
+    QHBoxLayout* structureParameterLayout = new QHBoxLayout;
+    structureParameterLayout->addWidget(structreParameterWidget);
+
+    QHBoxLayout* hLayout = new QHBoxLayout;
     hLayout->addWidget(txt);
     hLayout->addWidget(btnGetFile);
 
-    QHBoxLayout* hLayout2 = new QHBoxLayout(centralWidget);
-    hLayout2->addWidget(btnReadCloud);
+    ftdisp2 = new QComboBox();
+    // Fill the items of the ComboBox
+    ftdisp2->addItem("Intensity");
+    ftdisp2->addItem("Saliency");
+    ftdisp2->addItem("Surface Variation");
+    ftdisp2->addItem("ClCsCp");
+    ftdisp2->addItem("Curve Graph");
+    ftdisp2->addItem("Sum of Eigenvalues");
+    ftdisp2->addItem("Planarity");
+    ftdisp2->addItem("Anisotropy");
+    ftdisp2->addItem("Sphericity");
+    ftdisp2->addItem("Triangulation");
+    ftdisp2->addItem("Triangulation Points");
+    ftdisp2->addItem("DoN");
+    ftdisp2->addItem("Contour");
+    ftdisp2->addItem("Tensor Lines");
+    ftdisp2->addItem("Height");
+    ftdisp2->addItem("Linearity");
+    ftdisp2->addItem("Omnivariance");
+    ftdisp2->addItem("Eigenentropy");
+    ftdisp2->addItem("Labels");
 
-    layout->addLayout(hLayout);
-    layout->addLayout(hLayout2);
+    QHBoxLayout* processCloudLayout = new QHBoxLayout;
+    processCloudLayout->addWidget(ftdisp2);
+    processCloudLayout->addWidget(btnReadCloud);
 
+    structureClassifierlayout->addLayout(structureParameterLayout);
+    structureClassifierlayout->addLayout(hLayout);
+    structureClassifierlayout->addLayout(processCloudLayout);
+
+    structureParameterGroupBox->setLayout(structureClassifierlayout);
 
 
     QDockWidget *dock;
@@ -97,7 +133,7 @@ PCLAnalyzerWindow::PCLAnalyzerWindow(QWidget *parent) :
     dock->setAllowedAreas(Qt::RightDockWidgetArea);
     dock->setFloating(false);
     addDockWidget(Qt::RightDockWidgetArea, dock);
-    dock->setWidget(centralWidget);
+    dock->setWidget(structureParameterGroupBox);
 
     QDockWidget *dock1;
     dock1 = new QDockWidget(tr(""), this);
@@ -105,31 +141,6 @@ PCLAnalyzerWindow::PCLAnalyzerWindow(QWidget *parent) :
     dock1->setFloating(false);
     addDockWidget(Qt::RightDockWidgetArea, dock1);
     dock1->setWidget(previewGroupBox);
-
-}
-
-void PCLAnalyzerWindow::processCloud()
-{
-    displayCloud = false;
-
-    Request* req = new Request();
-    std::map<std::string, std::string>& request = req->GetRequest();
-    request["filePath"] = _filePath;
-
-    MainController* controller = new MainController();
-    _view = controller->Process("PROCESS", "PCLVIEWER", request);
-
-    // View is ready with the model
-    // now it can be vizualized
-    displayCloud = true;
-}
-
-void PCLAnalyzerWindow::setFilePath()
-{
-    QString fileName = QFileDialog::getOpenFileName(this,
-    tr("Select File"), "/home/", tr("Files (*.*)"));
-    txt->setText(fileName);
-    _filePath = fileName.toUtf8().constData();
 }
 
 // Method is invoked by OpenGL Widget to display in ViewPort
@@ -144,4 +155,118 @@ void PCLAnalyzerWindow::display()
 PCLAnalyzerWindow::~PCLAnalyzerWindow()
 {
     delete ui;
+}
+
+void PCLAnalyzerWindow::SetRmin(double rmin)
+{
+    if(rmin != this->rmin)
+    {
+        this->rmin = rmin;
+    }
+}
+
+void PCLAnalyzerWindow::SetRmax(double rmax)
+{
+    if(rmax != this->rmax)
+    {
+        this->rmax = rmax;
+    }
+}
+
+void PCLAnalyzerWindow::SetScale(double scale)
+{
+    if(scale != this->scale)
+    {
+        this->scale = scale;
+    }
+}
+
+void PCLAnalyzerWindow::SetEps(double eps)
+{
+    if(eps != this->eps)
+    {
+        this->eps = eps;
+    }
+}
+
+void PCLAnalyzerWindow::SetSigmaMin(double sigmin)
+{
+    {
+        if(sigmin != this->sigmin)
+        this->sigmin = sigmin;
+    }
+}
+
+void PCLAnalyzerWindow::SetSigmaMax(double sigmax)
+{
+    if(sigmax != this->sigmax)
+    {
+        this->sigmax = sigmax;
+    }
+}
+
+void PCLAnalyzerWindow::SetScalarMin(double scalarMin)
+{
+    if(scalarMin != this->scalarMin)
+    {
+        this->scalarMin = scalarMin;
+    }
+}
+
+void PCLAnalyzerWindow::SetScalarMax(double scalarMax)
+{
+    if(scalarMax != this->scalarMax)
+    {
+        this->scalarMax = scalarMax;
+    }
+}
+
+void PCLAnalyzerWindow::SetTensorType(int index)
+{
+    this->classifierType = static_cast<ClassifierTypes>(index);
+}
+
+void PCLAnalyzerWindow::ProcessCloud()
+{
+    displayCloud = false;
+
+    std::map<std::string, std::string>& request = PrepareRequest();
+    MainController* controller = new MainController();
+    _view = controller->Process("PROCESS", "PCLVIEWER", request);
+
+    // View is ready with the model
+    // now it can be vizualized
+    displayCloud = true;
+}
+
+void PCLAnalyzerWindow::SetFilePath()
+{
+    QString fileName = QFileDialog::getOpenFileName(this,
+    tr("Select File"), "/home/", tr("Files (*.*)"));
+    txt->setText(fileName);
+    _filePath = fileName.toUtf8().constData();
+}
+
+std::map<std::string, std::string>& PCLAnalyzerWindow::PrepareRequest()
+{
+    Request* req = new Request();
+    std::map<std::string, std::string>& request = req->GetRequest();
+    request["filePath"] = _filePath;
+
+    // Setting the Structural Classifier Parameters
+    request["epsi"] = boost::lexical_cast<std::string>(this->eps);
+    request["sigmin"] = boost::lexical_cast<std::string>(this->sigmin);
+    request["sigmax"] = boost::lexical_cast<std::string>(this->sigmax);
+    request["scalarmin"] = boost::lexical_cast<std::string>(this->scalarMin);
+    request["scalarmax"] = boost::lexical_cast<std::string>(this->scalarMax);
+
+    // Setting the General Parameter
+    request["rmin"] = boost::lexical_cast<std::string>(this->rmin); // available since c++11
+    request["rmax"] = boost::lexical_cast<std::string>(this->rmax);
+    request["scale"] = boost::lexical_cast<std::string>(this->scale);
+
+    // Selected Classifier
+    request["classifierType"] = boost::lexical_cast<std::string>(this->classifierType);
+
+    return request;
 }

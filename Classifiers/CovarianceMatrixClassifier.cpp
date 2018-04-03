@@ -16,6 +16,11 @@ Configuration* CovarianceMatrixClassifier::GetConfig()
 IPointDescriptor* CovarianceMatrixClassifier::Classify()
 {
     PointDescriptor* pointDescriptor = new PointDescriptor;
+    char* pEnd;
+    float _epsi = ::strtof(_config->GetValue("epsi").c_str(), &pEnd);
+    float _rmin = ::strtof(_config->GetValue("rmin").c_str(), &pEnd);
+    float _rmax = ::strtof(_config->GetValue("rmax").c_str(), &pEnd);
+    float radius = ::strtof(_config->GetValue("radius").c_str(), &pEnd);
 
     return pointDescriptor;
 }

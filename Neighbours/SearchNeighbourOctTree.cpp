@@ -36,10 +36,10 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr SearchNeighbourOctTree::GetNeighbourCloud(pc
     switch(searchOption.neighbourSearchTypes)
     {
         case Radius:
-            return GetRadiusSearchNeighbour(_cloud, searchPoint, searchOption.scale.radius);
+            return GetRadiusSearchNeighbour(_cloud, searchPoint, searchOption.searchParameter.radius);
             break;
         case KNearest:
-            return SearchKNearest(_cloud, searchPoint, searchOption.scale.kNearest);
+            return SearchKNearest(_cloud, searchPoint, searchOption.searchParameter.kNearest);
             break;
         case Voxel:
             return SearchVoxel(_cloud, searchPoint);

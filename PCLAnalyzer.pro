@@ -41,7 +41,10 @@ SOURCES += main.cpp\
     Classifiers/DiffusedNormalVotingClassifier.cpp \
     Classifiers/CovarianceMatrix2DClassifier.cpp \
     Classifiers/CovarianceMatrixClassifier.cpp \
-    Classifiers/BoundaryTensorClassifier.cpp
+    Classifiers/BoundaryTensorClassifier.cpp \
+    UI/Component/DoubleSlider.cpp \
+    UI/Component/StructureParameterWidget.cpp \
+    UI/Widgets/ParameterWidget.cpp
 
 HEADERS  += pclanalyzerwindow.h \
     Neighbours/SearchNeighbourOctTree.h \
@@ -78,7 +81,10 @@ HEADERS  += pclanalyzerwindow.h \
     Classifiers/DiffusedNormalVotingClassifier.h \
     Classifiers/CovarianceMatrix2DClassifier.h \
     Classifiers/CovarianceMatrixClassifier.h \
-    Classifiers/BoundaryTensorClassifier.h
+    Classifiers/BoundaryTensorClassifier.h \
+    UI/Component/DoubleSlider.h \
+    UI/Component/StructureParameterWidget.h \
+    UI/Widgets/ParameterWidget.h
 
 FORMS    += pclanalyzerwindow.ui \
     mainwindow.ui

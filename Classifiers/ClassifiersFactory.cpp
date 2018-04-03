@@ -26,11 +26,27 @@ ClassifiersBase* ClassifiersFactory::GetClassifier(ClassifierTypes classifierTyp
     ClassifiersBase* object;
     switch(classifierType)
     {
-        case BasicClassifier:
+        case C_3DVTGET:
             object = new Classifier();
         break;
-        case MultiScaleClassifier:
+        case C_3DVT:
             object = new Classifier();
+        break;
+        case C_3DCM:
+            object = new Classifier();
+        break;
+        case C_3DMCM:
+            object = new Classifier();
+        break;
+        case C_2DGET:
+            object = new Classifier();
+        break;
+        case C_Hessian:
+            object = new Classifier();
+        break;
+        case C_2DCM:
+            object = new Classifier();
+        break;
         default:
             object = new Classifier();
     }

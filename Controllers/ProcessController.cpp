@@ -1,14 +1,8 @@
 #include "ProcessController.h"
-#include <pcl/io/pcd_io.h>
-#include <pcl/point_types.h>
-#include <pcl/point_cloud.h>
-#include <pcl/common/common.h>
 #include <pcl/visualization/cloud_viewer.h>
 #include "Neighbours/SearchOptions.h"
-#include "Neighbours/SearchNeighbourBase.h"
 #include "Neighbours/SearchNeighbourOctTree.h"
 #include "Neighbours/SearchNeighbourFactory.h"
-#include "Classifiers/ClassifiersBase.h"
 #include "Classifiers/ClassifiersFactory.h"
 #include "Classifiers/ClassifierLabels.h"
 #include "Classifiers/ClassifierType.h"
@@ -16,6 +10,7 @@
 #include "IO/FileRead.h"
 #include "Models/ViewModel.h"
 #include <math.h>
+#include "boost/lexical_cast.hpp"
 
 ProcessController::ProcessController()
 {
@@ -47,36 +42,29 @@ IViewModel* ProcessController::Process(std::map<std::string, std::string> reques
         cloud = _tempCloud;
     }
 
+    // Get the Strategy to select the neighbours of a point
     /*Setting the Search Scale*/
-    SearchScale scale;
-    scale.radius = 0.01f;
-    scale.kNearest = 20;
-    scale.resolution = 128.0f;
+    SearchParameter parameter;
+    parameter.radius = 0.01f;
+    parameter.kNearest = 20;
+    parameter.resolution = 128.0f; // Get this value from UI setting
 
     /*Search Neighbour Options*/
     SearchOption option;
-    option.neighbourSearchDataStructure = OctTree;
+    option.neighbourSearchDataStructure = OctTree; // Get this Vlaue from the DropDown
     option.neighbourSearchTypes = Radius;
-    option.scale = scale;
+    option.searchParameter = parameter;
 
-    SearchNeighbourBase* search = SearchNeighbourFactory::GetNeighbourSearchDataStructure(OctTree);
-    search->Build(cloud, scale.resolution);
+    SearchNeighbourBase* search = GetNeighbourSearchStrategy(option);
+    search->Build(cloud, option.searchParameter.resolution);
 
-    ClassifiersBase* classifier = ClassifiersFactory::GetClassifier(BasicClassifier);
-    Configuration* classifierConfig = classifier->GetConfig();
-    std::map<std::string, std::string>& classifierParameter = classifierConfig->GetConfig();
-    classifierParameter["sigma"] = "1.0";
-    classifierParameter["lambdaN"] = "1.0";
-    classifierParameter["delta"] = "0.16";
-    classifierParameter["epsi"] = "0.5";
-    classifierParameter["rmin"] = "0.1";
-    classifierParameter["rmax"] = "0.2";
-    classifierParameter["radius"] = "0.01";
+    // Then decide how to classify the points.
+    ClassifiersBase* classifier = GetClassifier(request["classifierType"], request);
 
-    model->cloud = cloud;
-
+    // 1. For each point in the coud perform the neighbour search.
+    // 2. Then based on the neighbour cloud, classify the point.
     size_t size = cloud->points.size ();
-
+    model->cloud = cloud;
     for (size_t i = 0; i < size; ++i)
     {
         if (isnan(cloud->points[i].x) || isnan(cloud->points[i].y) || isnan(cloud->points[i].z))
@@ -90,10 +78,59 @@ IViewModel* ProcessController::Process(std::map<std::string, std::string> reques
         classifier->setSource(cloud->points[i]);
         classifier->setCloud(neighbourCloud);
         IPointDescriptor* pointdescriptor = classifier->Classify();
+
+        std::cout<<"\033[2J\033[1;1H";
         std::cout<<"Progress : "<<ceil(((float)i/(float)size)*100)<<"%"<<std::endl;
 
         model->descriptor.push_back(pointdescriptor);
     }
 
     return model;
+}
+
+SearchNeighbourBase* ProcessController::GetNeighbourSearchStrategy(SearchOption option)
+{
+    SearchNeighbourBase* search =
+            SearchNeighbourFactory::GetNeighbourSearchDataStructure(option.neighbourSearchDataStructure);
+
+    return search;
+}
+
+ClassifiersBase* ProcessController::GetClassifier(std::string classifierSelected, std::map<std::string, std::string> request)
+{
+    ClassifierTypes classifierType = static_cast<ClassifierTypes>
+            (boost::lexical_cast<int>(classifierSelected));
+
+    ClassifiersBase* classifier = ClassifiersFactory::GetClassifier(classifierType);
+
+    Configuration* classifierConfig = classifier->GetConfig();
+
+    std::map<std::string, std::string>& classifierParameter = classifierConfig->GetConfig();
+    /*MOVE THIS TO THE CODE AS A PRIVATE CONST PROPERTIESE*/
+    classifierParameter["sigma"] = "1.0";
+    classifierParameter["lambdaN"] = "1.0";
+    classifierParameter["delta"] = "0.16";
+    classifierParameter["radius"] = "0.01";
+
+    /*THESE COME FROM THE UI */
+    classifierParameter["epsi"] = request["epsi"];
+    classifierParameter["sigmin"] = request["sigmin"];
+    classifierParameter["sigmax"] = request["sigmax"];
+    classifierParameter["scalarmin"] = request["scalarmin"];
+    classifierParameter["scalarmax"] = request["scalarmax"];
+
+    classifierParameter["rmin"] = request["rmin"];
+    classifierParameter["rmax"] = request["rmax"];
+    classifierParameter["scale"] = request["scale"];
+
+    classifierParameter["classifierType"] = request["classifierType"];
+
+    return classifier;
+}
+
+pcl::PointCloud<pcl::PointXYZ>::Ptr ProcessController::ReadPointCloud(std::string filePath)
+{
+    pcl::PointCloud<pcl::PointXYZ>::Ptr _tempCloud (new pcl::PointCloud<pcl::PointXYZ>);
+
+    return _tempCloud;
 }

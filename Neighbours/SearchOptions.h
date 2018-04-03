@@ -15,7 +15,7 @@ enum NeighbourSearchDataStructure
   OctTree
 };
 
-struct SearchScale
+struct SearchParameter
 {
     float radius;
     int kNearest;
@@ -26,6 +26,6 @@ struct SearchOption
 {
     NeighbourSearchDataStructure neighbourSearchDataStructure;
     NeighbourSearchTypes neighbourSearchTypes;
-    SearchScale scale;
+    SearchParameter searchParameter;
 };
 #endif // TYPES

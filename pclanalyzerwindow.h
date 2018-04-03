@@ -18,12 +18,16 @@
 #include "Classifiers/ClassifierType.h"
 #include "Utilities/CommonUtility.h"
 #include "Views/IViews.h"
+#include "Classifiers/ClassifierType.h"
 
 namespace Ui {
 class PCLAnalyzerWindow;
 }
 
 class GLWidget;
+class QComboBox;
+class StructureParameterWidget;
+class ParameterWidget;
 
 class PCLAnalyzerWindow : public QMainWindow
 {
@@ -35,18 +39,42 @@ public:
     void display();
     ~PCLAnalyzerWindow();
 public slots:
-    void setFilePath();
-    void processCloud();
+    void SetFilePath();
+    void ProcessCloud();
+    void SetRmin(double rmin);
+    void SetRmax(double rmax);
+    void SetScale(double scale);
+    void SetEps(double eps);
+    void SetSigmaMin(double sigmin);
+    void SetSigmaMax(double sigmax);
+    void SetScalarMin(double scalarMin);
+    void SetScalarMax(double scalarMax);
+    void SetTensorType(int index);
 
 private:
     Ui::PCLAnalyzerWindow *ui;
     QTextEdit *txt;
     GLWidget *glWidget;
+    ParameterWidget* parameterWidget;
+    StructureParameterWidget* structreParameterWidget;
     std::string _filePath;
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud;
     std::vector<ClassLabels> classLabels;
     bool displayCloud = false;
     IViews* _view;
+    QComboBox *ftdisp2;
+    QComboBox* tensorType;
+    float eps;
+    float sigmin;
+    float sigmax;
+    float scalarMin;
+    float scalarMax;
+    float rmin;
+    float rmax;
+    float scale;
+    ClassifierTypes classifierType;
+
+    std::map<std::string, std::string>& PrepareRequest();
 };
 
 #endif // PCLANALYZERWINDOW_H
