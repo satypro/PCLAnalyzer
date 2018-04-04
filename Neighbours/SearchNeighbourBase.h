@@ -10,10 +10,11 @@
 class SearchNeighbourBase
 {
 public:
-    virtual void Build(pcl::PointCloud<pcl::PointXYZ>::Ptr& cloud, float resolution) = 0;
+    virtual void Build(pcl::PointCloud<pcl::PointXYZ>::Ptr& cloud) = 0;
     virtual pcl::PointCloud<pcl::PointXYZ>::Ptr
-        GetNeighbourCloud(pcl::PointXYZ& searchPoint, SearchOption searchOption) = 0;
+        GetNeighbourCloud(pcl::PointXYZ& searchPoint) = 0;
     virtual Configuration* GetConfig() = 0;
+    SearchOption searchOption;
 };
 
 #endif // SEARCHNEIGHBOURBASE

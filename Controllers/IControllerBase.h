@@ -9,7 +9,6 @@ class IControllerBase
 public:
     IControllerBase()
     {
-
     };
     virtual IViewModel* Process(std::map<std::string, std::string> request) = 0;
 };

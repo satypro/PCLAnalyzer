@@ -27,6 +27,7 @@ private:
     void getdiffusionvelocity(Eigen::Vector3f evals, metaVelData *diffVel);
     void computeSaliencyVals(glyphVars& glyph);
     void glyphAnalysis(glyphVars& glyph);
+    pcl::PointCloud<pcl::PointXYZ>::Ptr _neighbourCloud;
 };
 
 #endif // CLASSIFIER_H

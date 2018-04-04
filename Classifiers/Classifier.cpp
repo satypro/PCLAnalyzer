@@ -22,7 +22,10 @@ Configuration* Classifier::GetConfig()
 
 IPointDescriptor* Classifier::Classify()
 {
+    // The descriptor of the point we will process
     PointDescriptor* pointDescriptor = new PointDescriptor;
+
+    _neighbourCloud = GetSearchStrategy()->GetNeighbourCloud(getSource());
 
     char* pEnd;
     float _epsi = ::strtof(_config->GetValue("epsi").c_str(), &pEnd);
@@ -166,7 +169,7 @@ IPointDescriptor* Classifier::Classify()
 Eigen::Vector4f Classifier::Get3DCentroid()
 {
     Eigen::Vector4f xyz_centroid;
-    pcl::compute3DCentroid(*getCloud(), xyz_centroid);
+    pcl::compute3DCentroid(_neighbourCloud, xyz_centroid);
 
     return xyz_centroid;
 }
@@ -174,7 +177,7 @@ Eigen::Vector4f Classifier::Get3DCentroid()
 Eigen::Matrix3f Classifier::ComputeCovarianceMatrix()
 {
     Eigen::Matrix3f covariance_matrix;
-    pcl::computeCovarianceMatrix(*getCloud(), Get3DCentroid(), covariance_matrix);
+    pcl::computeCovarianceMatrix(_neighbourCloud, Get3DCentroid(), covariance_matrix);
 
     return covariance_matrix;
 }
@@ -195,11 +198,9 @@ TensorType Classifier::Get3DVotingTensor()
         result.evec2[j] = 0;
     }
 
-    pcl::PointCloud<pcl::PointXYZ>::Ptr neighbourCloud = getCloud();
-
-    for (size_t i = 0; i < neighbourCloud->points.size() ; i++)
+    for (size_t i = 0; i < _neighbourCloud->points.size() ; i++)
     {
-        if (MakeVector(getSource(), neighbourCloud->points[i], &V))
+        if (MakeVector(getSource(), _neighbourCloud->points[i], &V))
         {
             tensor = Compute3DBallVote(V, &weight);
 

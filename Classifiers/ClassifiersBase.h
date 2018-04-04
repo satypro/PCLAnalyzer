@@ -8,6 +8,7 @@
 #include "ClassifierLabels.h"
 #include "Config/Configuration.h"
 #include "Descriptors/IPointDescriptor.h"
+#include "Neighbours/SearchNeighbourBase.h"
 
 class ClassifiersBase
 {
@@ -36,9 +37,19 @@ public:
         return _cloud;
     }
 
+    virtual void SetSearchStrategy(SearchNeighbourBase* searchNeighbour)
+    {
+        _searchNeighbour = searchNeighbour;
+    }
+
+    SearchNeighbourBase* virtual GetSearchStrategy()
+    {
+        return _searchNeighbour;
+    }
 private:
     pcl::PointCloud<pcl::PointXYZ>::Ptr _cloud;
     pcl::PointXYZ _sourcePoint;
+    SearchNeighbourBase* _searchNeighbour;
 };
 
 #endif // CLASSIFIERSBASE_H

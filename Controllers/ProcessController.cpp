@@ -60,6 +60,8 @@ IViewModel* ProcessController::Process(std::map<std::string, std::string> reques
 
     // Then decide how to classify the points.
     ClassifiersBase* classifier = GetClassifier(request["classifierType"], request);
+    classifier->SetSearchStrategy(search);
+    classifier->setCloud(cloud);
 
     // 1. For each point in the coud perform the neighbour search.
     // 2. Then based on the neighbour cloud, classify the point.
@@ -72,17 +74,12 @@ IViewModel* ProcessController::Process(std::map<std::string, std::string> reques
             std::cout<<"The Point at : "<<i<<" NAN : "<<std::endl;
             continue;
         }
-
-        pcl::PointCloud<pcl::PointXYZ>::Ptr neighbourCloud = search->GetNeighbourCloud(cloud->points[i], option);
-
-        classifier->setSource(cloud->points[i]);
-        classifier->setCloud(neighbourCloud);
+        
+        classifier->setSource(cloud->points[i]);        
         IPointDescriptor* pointdescriptor = classifier->Classify();
-
-        std::cout<<"\033[2J\033[1;1H";
-        std::cout<<"Progress : "<<ceil(((float)i/(float)size)*100)<<"%"<<std::endl;
-
         model->descriptor.push_back(pointdescriptor);
+
+        std::cout<<"Progress : "<<ceil(((float)i/(float)size)*100)<<"%"<<std::endl;
     }
 
     return model;
@@ -92,6 +89,7 @@ SearchNeighbourBase* ProcessController::GetNeighbourSearchStrategy(SearchOption 
 {
     SearchNeighbourBase* search =
             SearchNeighbourFactory::GetNeighbourSearchDataStructure(option.neighbourSearchDataStructure);
+    search->searchOption = option;
 
     return search;
 }
