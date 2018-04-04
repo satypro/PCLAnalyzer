@@ -20,7 +20,7 @@ SearchNeighbourOctTree::SearchNeighbourOctTree()
 void SearchNeighbourOctTree::Build(pcl::PointCloud<pcl::PointXYZ>::Ptr& cloud)
 {
     _cloud = cloud;
-    _octree = new pcl::octree::OctreePointCloudSearch<pcl::PointXYZ>(searchOption.resolution);
+    _octree = new pcl::octree::OctreePointCloudSearch<pcl::PointXYZ>(searchOption.searchParameter.resolution);
     _octree->setInputCloud (cloud);
     _octree->addPointsFromInputCloud ();
 }
@@ -30,7 +30,7 @@ Configuration* SearchNeighbourOctTree::GetConfig()
     return _config;
 }
 
-pcl::PointCloud<pcl::PointXYZ>::Ptr SearchNeighbourOctTree::GetNeighbourCloud(pcl::PointXYZ &searchPoint)
+pcl::PointCloud<pcl::PointXYZ>::Ptr SearchNeighbourOctTree::GetNeighbourCloud(pcl::PointXYZ& searchPoint)
 {
     switch(searchOption.neighbourSearchTypes)
     {

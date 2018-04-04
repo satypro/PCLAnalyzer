@@ -22,10 +22,11 @@ Configuration* Classifier::GetConfig()
 
 IPointDescriptor* Classifier::Classify()
 {
-    // The descriptor of the point we will process
+    //The descriptor of the point we will process
     PointDescriptor* pointDescriptor = new PointDescriptor;
 
-    _neighbourCloud = GetSearchStrategy()->GetNeighbourCloud(getSource());
+    pcl::PointXYZ pointxyz = getSource();
+    _neighbourCloud = GetSearchStrategy()->GetNeighbourCloud(pointxyz);
 
     char* pEnd;
     float _epsi = ::strtof(_config->GetValue("epsi").c_str(), &pEnd);
@@ -35,9 +36,9 @@ IPointDescriptor* Classifier::Classify()
 
     TensorType T = Get3DVotingTensor();
     glyphVars glyph = EigenDecomposition(T);
-
     computeSaliencyVals(glyph);
     glyphAnalysis(glyph);
+
     pointDescriptor->glyph = glyph;
 
     if(glyph.evals[2] == 0.0 && glyph.evals[1] == 0.0 && glyph.evals[0] == 0.0)
@@ -169,7 +170,7 @@ IPointDescriptor* Classifier::Classify()
 Eigen::Vector4f Classifier::Get3DCentroid()
 {
     Eigen::Vector4f xyz_centroid;
-    pcl::compute3DCentroid(_neighbourCloud, xyz_centroid);
+    pcl::compute3DCentroid(*_neighbourCloud, xyz_centroid);
 
     return xyz_centroid;
 }
@@ -177,14 +178,13 @@ Eigen::Vector4f Classifier::Get3DCentroid()
 Eigen::Matrix3f Classifier::ComputeCovarianceMatrix()
 {
     Eigen::Matrix3f covariance_matrix;
-    pcl::computeCovarianceMatrix(_neighbourCloud, Get3DCentroid(), covariance_matrix);
+    pcl::computeCovarianceMatrix(*_neighbourCloud, Get3DCentroid(), covariance_matrix);
 
     return covariance_matrix;
 }
 
 TensorType Classifier::Get3DVotingTensor()
 {
-    TensorType tensor;
     TensorType result;
     float weight;
     Eigen::Matrix<double, 3, 1> V;
@@ -202,7 +202,7 @@ TensorType Classifier::Get3DVotingTensor()
     {
         if (MakeVector(getSource(), _neighbourCloud->points[i], &V))
         {
-            tensor = Compute3DBallVote(V, &weight);
+            TensorType tensor = Compute3DBallVote(V, &weight);
 
             for(int j =0; j < 3; j++)
             {

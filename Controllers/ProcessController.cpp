@@ -56,15 +56,14 @@ IViewModel* ProcessController::Process(std::map<std::string, std::string> reques
     option.searchParameter = parameter;
 
     SearchNeighbourBase* search = GetNeighbourSearchStrategy(option);
-    search->Build(cloud, option.searchParameter.resolution);
+    search->Build(cloud);
 
     // Then decide how to classify the points.
     ClassifiersBase* classifier = GetClassifier(request["classifierType"], request);
     classifier->SetSearchStrategy(search);
     classifier->setCloud(cloud);
 
-    // 1. For each point in the coud perform the neighbour search.
-    // 2. Then based on the neighbour cloud, classify the point.
+    // 1. For each point in the cloud classify the point.
     size_t size = cloud->points.size ();
     model->cloud = cloud;
     for (size_t i = 0; i < size; ++i)

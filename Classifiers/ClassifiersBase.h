@@ -42,7 +42,7 @@ public:
         _searchNeighbour = searchNeighbour;
     }
 
-    SearchNeighbourBase* virtual GetSearchStrategy()
+    virtual SearchNeighbourBase*  GetSearchStrategy()
     {
         return _searchNeighbour;
     }
