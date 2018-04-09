@@ -14,7 +14,7 @@ class ClassifiersBase
 {
 public:
     ClassifiersBase();
-    virtual IPointDescriptor* Classify() = 0 ;
+    virtual std::vector<IPointDescriptor*> Classify() = 0 ;
     virtual Configuration* GetConfig() = 0;
 
     void virtual setSource(pcl::PointXYZ sourcePoint)

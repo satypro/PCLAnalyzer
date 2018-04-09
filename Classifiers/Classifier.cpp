@@ -20,7 +20,29 @@ Configuration* Classifier::GetConfig()
     return _config;
 }
 
-IPointDescriptor* Classifier::Classify()
+std::vector<IPointDescriptor*> Classifier::Classify()
+{
+    std::vector<IPointDescriptor*> descriptors;
+    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud = getCloud();
+    size_t size = cloud->points.size ();
+    for (size_t i = 0; i < size; ++i)
+    {
+        if (isnan(cloud->points[i].x) || isnan(cloud->points[i].y) || isnan(cloud->points[i].z))
+        {
+            std::cout<<"The Point at : "<<i<<" NAN : "<<std::endl;
+            continue;
+        }
+
+        this->setSource(cloud->points[i]);
+        IPointDescriptor* pointdescriptor = Process();
+        descriptors.push_back(pointdescriptor);
+        std::cout<<"Progress : "<<ceil(((float)i/(float)size)*100)<<"%"<<std::endl;
+    }
+
+    return descriptors;
+}
+
+IPointDescriptor* Classifier::Process()
 {
     //The descriptor of the point we will process
     PointDescriptor* pointDescriptor = new PointDescriptor;

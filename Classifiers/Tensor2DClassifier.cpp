@@ -13,9 +13,9 @@ Configuration* Tensor2DClassifier::GetConfig()
     return _config;
 }
 
-IPointDescriptor* Tensor2DClassifier::Classify()
+std::vector<IPointDescriptor*> Tensor2DClassifier::Classify()
 {
-    PointDescriptor* pointDescriptor = new PointDescriptor;
+    std::vector<IPointDescriptor*> descriptors;
 
-    return pointDescriptor;
+    return descriptors;
 }

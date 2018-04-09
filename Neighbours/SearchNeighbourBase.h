@@ -13,6 +13,7 @@ public:
     virtual void Build(pcl::PointCloud<pcl::PointXYZ>::Ptr& cloud) = 0;
     virtual pcl::PointCloud<pcl::PointXYZ>::Ptr
         GetNeighbourCloud(pcl::PointXYZ& searchPoint) = 0;
+    virtual std::vector<int> GetNeighbourCloudIndex() = 0;
     virtual Configuration* GetConfig() = 0;
     SearchOption searchOption;
 };

@@ -9,6 +9,7 @@
 #include <pcl/common/common.h>
 #include "Classifiers/ClassifiersBase.h"
 #include "Neighbours/SearchNeighbourBase.h"
+#include "Models/ViewModel.h"
 
 class ProcessController : public IControllerBase
 {
@@ -19,6 +20,7 @@ private:
     pcl::PointCloud<pcl::PointXYZ>::Ptr ReadPointCloud(std::string filePath);
     ClassifiersBase* GetClassifier(std::string classifierSelected, std::map<std::string, std::string> request);
     SearchNeighbourBase* GetNeighbourSearchStrategy(SearchOption option);
+    void StructFeatClassification(ViewModel* model);
 };
 
 #endif // PROCESSCONTROLLER_H

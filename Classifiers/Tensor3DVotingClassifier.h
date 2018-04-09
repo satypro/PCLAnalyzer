@@ -6,7 +6,7 @@ class Tensor3DVotingClassifier : public ClassifiersBase
 {
 public:
     Tensor3DVotingClassifier();
-    IPointDescriptor* Classify();
+    std::vector<IPointDescriptor*> Classify();
     Configuration* GetConfig();
 
     void setCloud(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud)

@@ -13,9 +13,9 @@ Configuration* Tensor3DVotingClassifier::GetConfig()
     return _config;
 }
 
-IPointDescriptor* Tensor3DVotingClassifier::Classify()
+std::vector<IPointDescriptor*> Tensor3DVotingClassifier::Classify()
 {
-    PointDescriptor* pointDescriptor = new PointDescriptor;
+    std::vector<IPointDescriptor*> descriptors;
 
-    return pointDescriptor;
+    return descriptors;
 }

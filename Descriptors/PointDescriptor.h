@@ -3,6 +3,7 @@
 #include "Types/datatypes.h"
 #include "IPointDescriptor.h"
 #include "Classifiers/ClassifierLabels.h"
+#include <vector>
 
 class PointDescriptor : public IPointDescriptor
 {
@@ -11,6 +12,7 @@ public:
     featProps    featProp;
     glyphVars    glyph;
     ClassLabels  label;
+    std::vector <unsigned int> PtsProp;
 };
 
 #endif // POINTDESCRIPTOR_H

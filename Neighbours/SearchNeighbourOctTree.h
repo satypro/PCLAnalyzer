@@ -14,6 +14,7 @@ public:
     pcl::PointCloud<pcl::PointXYZ>::Ptr
         GetNeighbourCloud(pcl::PointXYZ& searchPoint);
     void Build(pcl::PointCloud<pcl::PointXYZ>::Ptr& cloud);
+    std::vector<int> GetNeighbourCloudIndex();
     Configuration* GetConfig();
 
 private:
@@ -29,6 +30,7 @@ private:
     pcl::PointCloud<pcl::PointXYZ>::Ptr
         SearchVoxel(pcl::PointCloud<pcl::PointXYZ>::Ptr &cloud, pcl::PointXYZ& searchPoint);
     Configuration* _config;
+    std::vector<int> _pointIndicies;
 };
 
 #endif // SEARCHNEIGHBOUR_H

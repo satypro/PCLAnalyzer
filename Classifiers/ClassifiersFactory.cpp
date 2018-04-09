@@ -1,5 +1,6 @@
 #include "ClassifiersFactory.h"
 #include "Classifier.h"
+#include "BoundaryTensorClassifier.h"
 
 std::map<ClassifierTypes, ClassifiersBase*> ClassifiersFactory::_classifierInstanceMap;
 
@@ -30,7 +31,7 @@ ClassifiersBase* ClassifiersFactory::GetClassifier(ClassifierTypes classifierTyp
             object = new Classifier();
         break;
         case C_3DVT:
-            object = new Classifier();
+            object = new BoundaryTensorClassifier();
         break;
         case C_3DCM:
             object = new Classifier();

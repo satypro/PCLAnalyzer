@@ -13,9 +13,9 @@ Configuration* DiffusedNormalVotingClassifier::GetConfig()
     return _config;
 }
 
-IPointDescriptor* DiffusedNormalVotingClassifier::Classify()
+std::vector<IPointDescriptor*> DiffusedNormalVotingClassifier::Classify()
 {
-    PointDescriptor* pointDescriptor = new PointDescriptor;
+    std::vector<IPointDescriptor*> descriptors;
 
-    return pointDescriptor;
+    return descriptors;
 }

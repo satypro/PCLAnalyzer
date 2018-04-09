@@ -67,6 +67,7 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr SearchNeighbourOctTree::GetRadiusSearchNeigh
         }
     }
 
+    _pointIndicies = pointIdxRadiusSearch;
     return temp_Cloud;
 }
 
@@ -85,6 +86,7 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr SearchNeighbourOctTree::SearchKNearest(pcl::
         }
     }
 
+    _pointIndicies = pointIdxNKNSearch;
     return cloud_cluster;
 }
 
@@ -101,5 +103,11 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr SearchNeighbourOctTree::SearchVoxel(pcl::Poi
         }
     }
 
+    _pointIndicies = pointIdxVec;
     return cloud_cluster;
+}
+
+std::vector<int> SearchNeighbourOctTree::GetNeighbourCloudIndex()
+{
+    return _pointIndicies;
 }

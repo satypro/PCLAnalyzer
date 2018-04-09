@@ -8,9 +8,10 @@
 #include "Classifiers/ClassifierType.h"
 #include "Utilities/CommonUtility.h"
 #include "IO/FileRead.h"
-#include "Models/ViewModel.h"
 #include <math.h>
 #include "boost/lexical_cast.hpp"
+#include "Descriptors/PointDescriptor.h"
+#include <vector>
 
 ProcessController::ProcessController()
 {
@@ -62,8 +63,10 @@ IViewModel* ProcessController::Process(std::map<std::string, std::string> reques
     ClassifiersBase* classifier = GetClassifier(request["classifierType"], request);
     classifier->SetSearchStrategy(search);
     classifier->setCloud(cloud);
+    model->cloud = cloud;
+    model->descriptor = classifier->Classify();
 
-    // 1. For each point in the cloud classify the point.
+   /* // 1. For each point in the cloud classify the point.
     size_t size = cloud->points.size ();
     model->cloud = cloud;
     for (size_t i = 0; i < size; ++i)
@@ -80,6 +83,9 @@ IViewModel* ProcessController::Process(std::map<std::string, std::string> reques
 
         std::cout<<"Progress : "<<ceil(((float)i/(float)size)*100)<<"%"<<std::endl;
     }
+    */
+
+    StructFeatClassification(model);
 
     return model;
 }
@@ -130,4 +136,111 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr ProcessController::ReadPointCloud(std::strin
     pcl::PointCloud<pcl::PointXYZ>::Ptr _tempCloud (new pcl::PointCloud<pcl::PointXYZ>);
 
     return _tempCloud;
+}
+
+void ProcessController::StructFeatClassification(ViewModel* model)
+{
+     size_t i, cloudSize = model->cloud->points.size();
+     std::vector <unsigned int> _ftPtsProp;
+
+     if(model->descriptor.size() == 0 || cloudSize != model->descriptor.size())
+     {
+         cout<<"there are no points to classify "<<endl;
+                 return;
+     }
+
+     _ftPtsProp.resize(cloudSize);
+
+         size_t l_c = 0, l_s =  0, l_p =0;
+
+         float min_cl = 100;
+         float min_cp = 100;
+         float min_cs = 100;
+         float min_anisotropy = 100;
+         float min_sphericity = 100;
+         float min_don = 100;
+         float max_cl = -100;
+         float max_cp = -100;
+         float max_cs = -100;
+         float max_anisotropy = -100;
+         float max_sphericity = -100;
+         float max_don = -100;
+         int numRoofPoints = 0;
+         int numRoofTriangulationPoints = 0;
+
+         for(i = 0; i < cloudSize; i++)
+         {
+             /*if(pointDescriptor->featNode.label==5)
+                 numRoofPoints++;
+             if(pointDescriptor->featNode.label==5 && pointDescriptor->featNode.triangles.size()>0)
+                 numRoofTriangulationPoints++;
+             */
+
+             PointDescriptor* pointDescriptor = (PointDescriptor* )model->descriptor[i];
+
+             if(pointDescriptor->featNode.csclcp[0]<min_cs)
+                 min_cs = pointDescriptor->featNode.csclcp[0];
+             if(pointDescriptor->featNode.csclcp[0]>max_cs)
+                 max_cs = pointDescriptor->featNode.csclcp[0];
+
+             if(pointDescriptor->featNode.csclcp[1]<min_cl)
+                 min_cl = pointDescriptor->featNode.csclcp[1];
+             if(pointDescriptor->featNode.csclcp[1]>max_cl)
+                 max_cl = pointDescriptor->featNode.csclcp[1];
+
+             if(pointDescriptor->featNode.csclcp[2]<min_cp)
+                 min_cp = pointDescriptor->featNode.csclcp[2];
+             if(pointDescriptor->featNode.csclcp[2]>max_cp)
+                 max_cp = pointDescriptor->featNode.csclcp[2];
+
+             if(pointDescriptor->featNode.anisotropy<min_anisotropy)
+                 min_anisotropy = pointDescriptor->featNode.anisotropy;
+             if(pointDescriptor->featNode.anisotropy>max_anisotropy)
+                 max_anisotropy = pointDescriptor->featNode.anisotropy;
+
+             if(pointDescriptor->featNode.sphericity<min_sphericity)
+                 min_sphericity = pointDescriptor->featNode.sphericity;
+             if(pointDescriptor->featNode.sphericity>max_sphericity)
+                 max_sphericity = pointDescriptor->featNode.sphericity;
+
+             if(pointDescriptor->featNode.don<min_don)
+                 min_don = pointDescriptor->featNode.don;
+             if(pointDescriptor->featNode.don>max_don)
+                 max_don = pointDescriptor->featNode.don;
+
+             if(pointDescriptor->featNode.csclcp[0] >= pointDescriptor->featNode.csclcp[1] && pointDescriptor->featNode.csclcp[0] >= pointDescriptor->featNode.csclcp[2])
+             {
+                 _ftPtsProp[i] = 1;
+                 l_s++;
+             }
+
+             else if(pointDescriptor->featNode.csclcp[1] >= pointDescriptor->featNode.csclcp[0] && pointDescriptor->featNode.csclcp[1] >= pointDescriptor->featNode.csclcp[2])
+             {
+                 _ftPtsProp[i] = 2;
+                 l_c++;
+             }
+
+             else if(pointDescriptor->featNode.csclcp[2] >= pointDescriptor->featNode.csclcp[1] && pointDescriptor->featNode.csclcp[2] >= pointDescriptor->featNode.csclcp[0])
+             {
+                 _ftPtsProp[i] = 3;
+                 l_p++;
+             }
+             else
+                  _ftPtsProp[i] = 0;
+
+
+             pointDescriptor->PtsProp = _ftPtsProp;
+
+         }
+
+         std::cout<<"number of line-type features "<<l_c<<std::endl;
+         std::cout<<"number of  critical features "<<l_s<<std::endl;
+         std::cout<<"number of surface-type features "<<l_p<<std::endl;
+         std::cout <<"min cl = " << min_cl << " max cl = "<< max_cl << std::endl;
+         std::cout <<"min cp = " << min_cp << " max cp = "<< max_cp << std::endl;
+         std::cout <<"min cs = " << min_cs << " max cs = "<< max_cs << std::endl;
+         std::cout <<"min anisotropy = " << min_anisotropy << " max anisotropy = "<< max_anisotropy << std::endl;
+         std::cout <<"min sphericity = " << min_sphericity << " max sphericity = "<< max_sphericity << std::endl;
+         std::cout <<"min don = " << min_don << " max don = "<< max_don << std::endl;
+         std::cout << "# roof points = " << numRoofPoints << " # triangulation roof points = " << numRoofTriangulationPoints << std::endl;
 }

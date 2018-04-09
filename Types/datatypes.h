@@ -7,6 +7,8 @@ struct TensorType
     float evec0[3];
     float evec1[3];
     float evec2[3];
+
+    TensorType(){}
 };
 
 struct EigenResult

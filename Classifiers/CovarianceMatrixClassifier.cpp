@@ -1,6 +1,7 @@
 #include "CovarianceMatrixClassifier.h"
 #include <pcl/common/centroid.h>
 #include <pcl/common/common.h>
+#include <teem/ten.h>
 #include "Utilities/eig3.h"
 
 CovarianceMatrixClassifier::CovarianceMatrixClassifier()
@@ -15,7 +16,30 @@ Configuration* CovarianceMatrixClassifier::GetConfig()
     return _config;
 }
 
-IPointDescriptor* CovarianceMatrixClassifier::Classify()
+std::vector<IPointDescriptor*> CovarianceMatrixClassifier::Classify()
+{
+    std::vector<IPointDescriptor*> descriptors;
+
+    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud = getCloud();
+    size_t size = cloud->points.size ();
+    for (size_t i = 0; i < size; ++i)
+    {
+        if (isnan(cloud->points[i].x) || isnan(cloud->points[i].y) || isnan(cloud->points[i].z))
+        {
+            std::cout<<"The Point at : "<<i<<" NAN : "<<std::endl;
+            continue;
+        }
+
+        this->setSource(cloud->points[i]);
+        IPointDescriptor* pointdescriptor = Process();
+        descriptors.push_back(pointdescriptor);
+        std::cout<<"Progress : "<<ceil(((float)i/(float)size)*100)<<"%"<<std::endl;
+    }
+
+    return descriptors;
+}
+
+IPointDescriptor* CovarianceMatrixClassifier::Process()
 {
     PointDescriptor* pointDescriptor = new PointDescriptor;
     _searchNeighbour = GetSearchStrategy();
@@ -53,7 +77,7 @@ IPointDescriptor* CovarianceMatrixClassifier::Classify()
         averaged_tensor.evec2[j] /= _scale;
     }
 
-    // We will swap the averaged_tensor and covarianceTensor
+    // We swap the averaged_tensor and covarianceTensor
     MeasureProbability(pointDescriptor, covarianceTensor, averaged_tensor);
 
     return pointDescriptor;
@@ -100,88 +124,84 @@ void CovarianceMatrixClassifier::MeasureProbability(
 
     glyphVars glyph = EigenDecomposition(covarianceTensor);
     computeSaliencyVals(glyph, averaged_tensor);
+    glyphAnalysis(glyph);
 
     if(glyph.evals[2] == 0.0 && glyph.evals[1] == 0.0 && glyph.evals[0] == 0.0)
-            {
-                 pointDescriptor->featNode.prob[0] = pointDescriptor->featNode.prob[0] + 1;
-            }
-            else
-            {
-                if(glyph.evals[2] >= _epsi * glyph.evals[0]) //ev0>ev1>ev2
-                    pointDescriptor->featNode.prob[0] = pointDescriptor->featNode.prob[0] + 1;
+    {
+         pointDescriptor->featNode.prob[0] = pointDescriptor->featNode.prob[0] + 1;
+    }
+    else
+    {
+        if(glyph.evals[2] >= _epsi * glyph.evals[0]) //ev0>ev1>ev2
+            pointDescriptor->featNode.prob[0] = pointDescriptor->featNode.prob[0] + 1;
 
-                if(glyph.evals[1] < _epsi * glyph.evals[0]) //ev0>ev1>ev2
-                   pointDescriptor->featNode.prob[1] = pointDescriptor->featNode.prob[1] + 1;
+        if(glyph.evals[1] < _epsi * glyph.evals[0]) //ev0>ev1>ev2
+           pointDescriptor->featNode.prob[1] = pointDescriptor->featNode.prob[1] + 1;
 
-                if(glyph.evals[2] < _epsi * glyph.evals[0])  //ev0>ev1>ev2
-                    pointDescriptor->featNode.prob[2] = pointDescriptor->featNode.prob[2] + 1;
-
-
-                pointDescriptor->featNode.featStrength[0] += ((glyph.evals[2] * glyph.evals[1])/(glyph.evals[0] * glyph.evals[0]));
-                pointDescriptor->featNode.featStrength[1] += ((glyph.evals[2] * (glyph.evals[0] - glyph.evals[1]))/(glyph.evals[0] * glyph.evals[1]));
-                pointDescriptor->featNode.featStrength[2] +=  glyph.evals[2] /(glyph.evals[0] + glyph.evals[1] + glyph.evals[2]);
-
-            }
+        if(glyph.evals[2] < _epsi * glyph.evals[0])  //ev0>ev1>ev2
+            pointDescriptor->featNode.prob[2] = pointDescriptor->featNode.prob[2] + 1;
 
 
-            pointDescriptor->featNode.csclcp[0] = glyph.csclcp[0];
-            pointDescriptor->featNode.csclcp[1] = glyph.csclcp[1];
-            pointDescriptor->featNode.csclcp[2] = glyph.csclcp[2];
+        pointDescriptor->featNode.featStrength[0] += ((glyph.evals[2] * glyph.evals[1])/(glyph.evals[0] * glyph.evals[0]));
+        pointDescriptor->featNode.featStrength[1] += ((glyph.evals[2] * (glyph.evals[0] - glyph.evals[1]))/(glyph.evals[0] * glyph.evals[1]));
+        pointDescriptor->featNode.featStrength[2] +=  glyph.evals[2] /(glyph.evals[0] + glyph.evals[1] + glyph.evals[2]);
+    }
 
-            pointDescriptor->featNode.sum_eigen = glyph.evals[0] + glyph.evals[1] + glyph.evals[2];
-            if(glyph.evals[0] != 0)
-            {
-                pointDescriptor->featNode.planarity = (glyph.evals[0] - glyph.evals[1]) / glyph.evals[0];
-                pointDescriptor->featNode.anisotropy = (glyph.evals[1] - glyph.evals[2]) / glyph.evals[0];
-                pointDescriptor->featNode.sphericity = (glyph.evals[0] - glyph.evals[2]) / glyph.evals[0];
-            }
-            else
-            {
-                pointDescriptor->featNode.planarity = 0;
-                pointDescriptor->featNode.anisotropy = 0;
-                pointDescriptor->featNode.sphericity = 0;
-            }
+    pointDescriptor->featNode.csclcp[0] = glyph.csclcp[0];
+    pointDescriptor->featNode.csclcp[1] = glyph.csclcp[1];
+    pointDescriptor->featNode.csclcp[2] = glyph.csclcp[2];
 
+    pointDescriptor->featNode.sum_eigen = glyph.evals[0] + glyph.evals[1] + glyph.evals[2];
+    if(glyph.evals[0] != 0)
+    {
+        pointDescriptor->featNode.planarity = (glyph.evals[0] - glyph.evals[1]) / glyph.evals[0];
+        pointDescriptor->featNode.anisotropy = (glyph.evals[1] - glyph.evals[2]) / glyph.evals[0];
+        pointDescriptor->featNode.sphericity = (glyph.evals[0] - glyph.evals[2]) / glyph.evals[0];
+    }
+    else
+    {
+        pointDescriptor->featNode.planarity = 0;
+        pointDescriptor->featNode.anisotropy = 0;
+        pointDescriptor->featNode.sphericity = 0;
+    }
 
-            if(glyph.evals[2] == 0.0 && glyph.evals[1] == 0.0 && glyph.evals[0] == 0.0)
-            {
-                 pointDescriptor->featNode.prob[0] = pointDescriptor->featNode.prob[0] + 1;
-            }
-            else
-            {
-                if(glyph.evals[2] >= _epsi * glyph.evals[0]) //ev0>ev1>ev2
-                    pointDescriptor->featNode.prob[0] = pointDescriptor->featNode.prob[0] + 1;
+    if(glyph.evals[2] == 0.0 && glyph.evals[1] == 0.0 && glyph.evals[0] == 0.0)
+    {
+         pointDescriptor->featNode.prob[0] = pointDescriptor->featNode.prob[0] + 1;
+    }
+    else
+    {
+        if(glyph.evals[2] >= _epsi * glyph.evals[0]) //ev0>ev1>ev2
+            pointDescriptor->featNode.prob[0] = pointDescriptor->featNode.prob[0] + 1;
 
-                if(glyph.evals[1] < _epsi * glyph.evals[0]) //ev0>ev1>ev2
-                   pointDescriptor->featNode.prob[1] = pointDescriptor->featNode.prob[1] + 1;
+        if(glyph.evals[1] < _epsi * glyph.evals[0]) //ev0>ev1>ev2
+           pointDescriptor->featNode.prob[1] = pointDescriptor->featNode.prob[1] + 1;
 
-                if(glyph.evals[2] < _epsi * glyph.evals[0])  //ev0>ev1>ev2
-                    pointDescriptor->featNode.prob[2] = pointDescriptor->featNode.prob[2] + 1;
+        if(glyph.evals[2] < _epsi * glyph.evals[0])  //ev0>ev1>ev2
+            pointDescriptor->featNode.prob[2] = pointDescriptor->featNode.prob[2] + 1;
 
+        pointDescriptor->featNode.featStrength[0] += ((glyph.evals[2] * glyph.evals[1])/(glyph.evals[0] * glyph.evals[0]));
+        pointDescriptor->featNode.featStrength[1] += ((glyph.evals[2] * (glyph.evals[0] - glyph.evals[1]))/(glyph.evals[0] * glyph.evals[1]));
+        pointDescriptor->featNode.featStrength[2] +=  glyph.evals[2] /(glyph.evals[0] + glyph.evals[1] + glyph.evals[2]);
+    }
 
-                pointDescriptor->featNode.featStrength[0] += ((glyph.evals[2] * glyph.evals[1])/(glyph.evals[0] * glyph.evals[0]));
-                pointDescriptor->featNode.featStrength[1] += ((glyph.evals[2] * (glyph.evals[0] - glyph.evals[1]))/(glyph.evals[0] * glyph.evals[1]));
-                pointDescriptor->featNode.featStrength[2] +=  glyph.evals[2] /(glyph.evals[0] + glyph.evals[1] + glyph.evals[2]);
+    pointDescriptor->featNode.csclcp[0] = glyph.csclcp[0];
+    pointDescriptor->featNode.csclcp[1] = glyph.csclcp[1];
+    pointDescriptor->featNode.csclcp[2] = glyph.csclcp[2];
 
-            }
-
-            pointDescriptor->featNode.csclcp[0] = glyph.csclcp[0];
-            pointDescriptor->featNode.csclcp[1] = glyph.csclcp[1];
-            pointDescriptor->featNode.csclcp[2] = glyph.csclcp[2];
-
-            pointDescriptor->featNode.sum_eigen = glyph.evals[0] + glyph.evals[1] + glyph.evals[2];
-            if(glyph.evals[0] != 0)
-            {
-                pointDescriptor->featNode.planarity = (glyph.evals[0] - glyph.evals[1]) / glyph.evals[0];
-                pointDescriptor->featNode.anisotropy = (glyph.evals[1] - glyph.evals[2]) / glyph.evals[0];
-                pointDescriptor->featNode.sphericity = (glyph.evals[0] - glyph.evals[2]) / glyph.evals[0];
-            }
-            else
-            {
-                pointDescriptor->featNode.planarity = 0;
-                pointDescriptor->featNode.anisotropy = 0;
-                pointDescriptor->featNode.sphericity = 0;
-            }
+    pointDescriptor->featNode.sum_eigen = glyph.evals[0] + glyph.evals[1] + glyph.evals[2];
+    if(glyph.evals[0] != 0)
+    {
+        pointDescriptor->featNode.planarity = (glyph.evals[0] - glyph.evals[1]) / glyph.evals[0];
+        pointDescriptor->featNode.anisotropy = (glyph.evals[1] - glyph.evals[2]) / glyph.evals[0];
+        pointDescriptor->featNode.sphericity = (glyph.evals[0] - glyph.evals[2]) / glyph.evals[0];
+    }
+    else
+    {
+        pointDescriptor->featNode.planarity = 0;
+        pointDescriptor->featNode.anisotropy = 0;
+        pointDescriptor->featNode.sphericity = 0;
+    }
 }
 
 glyphVars CovarianceMatrixClassifier::EigenDecomposition(TensorType tensor)
@@ -268,5 +288,32 @@ void CovarianceMatrixClassifier::computeSaliencyVals(glyphVars& glyph, TensorTyp
 
 void CovarianceMatrixClassifier::glyphAnalysis(glyphVars& glyph)
 {
+       double eps=1e-4;
+       double evals[3], uv[2], abc[3];
 
+       double norm = sqrt(glyph.evals[2] * glyph.evals[2] + glyph.evals[1]*glyph.evals[1] + glyph.evals[0] *glyph.evals[0]);
+
+       evals[0] = glyph.evals[2];   //ev0>ev1>ev2
+       evals[1] = glyph.evals[1];
+       evals[2] = glyph.evals[0];
+
+       //tenGlyphBqdUvEval(uv, evals);
+       //tenGlyphBqdAbcUv(abc, uv, 3.0);
+
+       norm=ELL_3V_LEN(evals);
+
+       if (norm<eps)
+       {
+         double weight=norm/eps;
+         abc[0]=weight*abc[0]+(1-weight);
+         abc[1]=weight*abc[1]+(1-weight);
+         abc[2]=weight*abc[2]+(1-weight);
+       }
+
+       glyph.uv[0] = uv[0];
+       glyph.uv[1] = uv[1];
+
+       glyph.abc[0] = abc[0];
+       glyph.abc[1] = abc[1];
+       glyph.abc[2] = abc[2];
 }

@@ -6,7 +6,7 @@ class Tensor2DClassifier : public ClassifiersBase
 {
 public:
     Tensor2DClassifier();
-    IPointDescriptor* Classify();
+    std::vector<IPointDescriptor*> Classify();
     Configuration* GetConfig();
 
     void setCloud(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud)

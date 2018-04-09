@@ -6,7 +6,7 @@ class Classifier : public ClassifiersBase
 {
 public:
     Classifier();
-    IPointDescriptor* Classify();
+    std::vector<IPointDescriptor*> Classify();
     Configuration* GetConfig();
 
     void setCloud(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud)
@@ -27,6 +27,7 @@ private:
     void getdiffusionvelocity(Eigen::Vector3f evals, metaVelData *diffVel);
     void computeSaliencyVals(glyphVars& glyph);
     void glyphAnalysis(glyphVars& glyph);
+    IPointDescriptor* Process();
     pcl::PointCloud<pcl::PointXYZ>::Ptr _neighbourCloud;
 };
 
