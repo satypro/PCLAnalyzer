@@ -1,7 +1,5 @@
 #include "BoundaryTensorClassifier.h"
-#include "Descriptors/PointDescriptor.h"
 #include "Utilities/eig3.h"
-#include <stdlib.h>
 #include <teem/ten.h>
 
 BoundaryTensorClassifier::BoundaryTensorClassifier()
@@ -16,10 +14,10 @@ Configuration* BoundaryTensorClassifier::GetConfig()
     return _config;
 }
 
-std::vector<IPointDescriptor*> BoundaryTensorClassifier::Classify()
+std::vector<PointDescriptor*> BoundaryTensorClassifier::Classify()
 {
     size_t cloudSize = getCloud()->points.size();
-    std::vector<IPointDescriptor*> descriptors(cloudSize, new PointDescriptor());
+    std::vector<PointDescriptor*> descriptors(cloudSize, new PointDescriptor());
     _searchNeighbour = GetSearchStrategy();
 
     char* pEnd;
@@ -38,12 +36,10 @@ std::vector<IPointDescriptor*> BoundaryTensorClassifier::Classify()
     float dDeltaRadius = (_rmax - _rmin)/(_scale - 1.0);
     float radius = _rmin;
 
-
-   // while(radius <= _rmax)
-    //{
+    while(radius <= _rmax)
+    {
         std::vector<TensorType> boundaryTensors(cloudSize, TensorType());
         std::vector<TensorType> averaged_tensors(cloudSize, TensorType());
-        std::cout<<"Progress : Tensor building"<<std::endl;
         BuildBoundaryTensor(radius, boundaryTensors);
 
         for(size_t i = 0 ; i < cloudSize; ++i)
@@ -53,7 +49,7 @@ std::vector<IPointDescriptor*> BoundaryTensorClassifier::Classify()
         }
 
         radius += dDeltaRadius;
-    //}
+    }
 
     return descriptors;
 }
@@ -155,10 +151,17 @@ void BoundaryTensorClassifier::BuildBoundaryTensor(float radius, std::vector<Ten
 
 void BoundaryTensorClassifier::CalculatePartialDerivative(float radius, std::vector<Derivatives>& derivatives)
 {
-    int index = 0;
-    for(pcl::PointXYZ searchPoint : getCloud())
+    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud = getCloud();
+
+    for(int index = 0 ; index < cloud->points.size(); index++)
     {
+        if (isnan(cloud->points[index].x) || isnan(cloud->points[index].y) || isnan(cloud->points[index].z))
+        {
+            std::cout<<"The Point at : "<<index<<" NAN : "<<std::endl;
+            continue;
+        }
         _searchNeighbour->searchOption.searchParameter.radius = radius;
+        pcl::PointXYZ searchPoint = cloud->points[index];
         pcl::PointCloud<pcl::PointXYZ>::Ptr _neighbourCloud =
                 _searchNeighbour->GetNeighbourCloud(searchPoint);
 

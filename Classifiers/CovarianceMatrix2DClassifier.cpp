@@ -1,7 +1,7 @@
 #include "CovarianceMatrix2DClassifier.h"
-#include "Descriptors/PointDescriptor.h"
 #include <pcl/common/centroid.h>
 #include <pcl/common/common.h>
+#include <pcl/common/eigen.h>
 #include <teem/ten.h>
 #include "Utilities/eig3.h"
 
@@ -17,10 +17,10 @@ Configuration* CovarianceMatrix2DClassifier::GetConfig()
     return _config;
 }
 
-std::vector<IPointDescriptor*> CovarianceMatrix2DClassifier::Classify()
+std::vector<PointDescriptor*> CovarianceMatrix2DClassifier::Classify()
 {
     size_t cloudSize = getCloud()->points.size();
-    std::vector<IPointDescriptor*> descriptors(cloudSize, new PointDescriptor());
+    std::vector<PointDescriptor*> descriptors(cloudSize, new PointDescriptor());
 
     char* pEnd;
     float _rmin = ::strtof(_config->GetValue("rmin").c_str(), &pEnd);
@@ -39,7 +39,7 @@ std::vector<IPointDescriptor*> CovarianceMatrix2DClassifier::Classify()
     while(radius <= _rmax)
     {
         std::vector<TensorType> tensors(cloudSize, TensorType());
-        std::vector<TensorType> averaged_tensor(cloudSize, TensorType())
+        std::vector<TensorType> averaged_tensor(cloudSize, TensorType());
         GetCoVaraianceTensor(radius, tensors);
         Process(descriptors, tensors, averaged_tensor);
         radius += dDeltaRadius;
@@ -48,7 +48,7 @@ std::vector<IPointDescriptor*> CovarianceMatrix2DClassifier::Classify()
     return descriptors;
 }
 
-IPointDescriptor* CovarianceMatrix2DClassifier::Process(std::vector<PointDescriptor*>& pointDescriptors, std::vector<TensorType>& tensors, std::vector<TensorType>& averaged_tensor)
+void CovarianceMatrix2DClassifier::Process(std::vector<PointDescriptor*>& pointDescriptors, std::vector<TensorType>& tensors, std::vector<TensorType>& averaged_tensor)
 {
     char* pEnd;
     float _epsi = ::strtof(_config->GetValue("epsi").c_str(), &pEnd);
@@ -56,8 +56,8 @@ IPointDescriptor* CovarianceMatrix2DClassifier::Process(std::vector<PointDescrip
     for (int i = 0; getCloud()->points.size(); i++)
     {
         glyphVars glyph = EigenDecomposition(tensors[i]);
-        computeSaliencyVals(glyph, averaged_tensor[i]);
-        glyphAnalysis(glyph);
+        ComputeSaliencyVals(glyph, averaged_tensor[i]);
+        GlyphAnalysis(glyph);
 
         pointDescriptors[i]->glyph = glyph;
 
@@ -86,7 +86,7 @@ IPointDescriptor* CovarianceMatrix2DClassifier::Process(std::vector<PointDescrip
         pointDescriptors[i]->featNode.csclcp[1] = glyph.csclcp[1];
         pointDescriptors[i]->featNode.csclcp[2] = glyph.csclcp[2];
 
-        pointDescriptor->featNode.sum_eigen = glyph.evals[0] + glyph.evals[1] + glyph.evals[2];
+        pointDescriptors[i]->featNode.sum_eigen = glyph.evals[0] + glyph.evals[1] + glyph.evals[2];
         if(glyph.evals[0] != 0)
         {
             pointDescriptors[i]->featNode.planarity = (glyph.evals[0] - glyph.evals[1]) / glyph.evals[0];
@@ -142,13 +142,11 @@ IPointDescriptor* CovarianceMatrix2DClassifier::Process(std::vector<PointDescrip
 
 TensorType CovarianceMatrix2DClassifier::GetCoVaraianceTensor(float radius, std::vector<TensorType>& tensors)
 {
-    int index = -1;
     _searchNeighbour->searchOption.searchParameter.radius = radius;
+    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud = getCloud();
 
-    for(pcl::PointXYZ searchPoint : getCloud())
+    for(int index = 0 ; index < cloud->points.size(); index++)
     {
-        index++;
-
         for(int j =0; j < 3; j++)
         {
             tensors[index].evec0[j] = 0;
@@ -156,7 +154,13 @@ TensorType CovarianceMatrix2DClassifier::GetCoVaraianceTensor(float radius, std:
             tensors[index].evec2[j] = 0;
         }
 
-        _neighbourCloud = _searchNeighbour->GetNeighbourCloud(searchPoint);
+        if (isnan(cloud->points[index].x) || isnan(cloud->points[index].y) || isnan(cloud->points[index].z))
+        {
+            std::cout<<"The Point at : "<<index<<" NAN : "<<std::endl;
+            continue;
+        }
+
+        _neighbourCloud = _searchNeighbour->GetNeighbourCloud(cloud->points[index]);
         
         Eigen::Vector4f xyz_centroid;
         pcl::compute3DCentroid(*_neighbourCloud, xyz_centroid);
@@ -178,7 +182,7 @@ TensorType CovarianceMatrix2DClassifier::GetCoVaraianceTensor(float radius, std:
     }
 }
 
-void CovarianceMatrix2DClassifier::computeSaliencyVals(glyphVars& glyph, TensorType& averaged_tensor)
+void CovarianceMatrix2DClassifier::ComputeSaliencyVals(glyphVars& glyph, TensorType& averaged_tensor)
 {
     float len = glyph.evals[1] + glyph.evals[0];
 
@@ -227,7 +231,7 @@ void CovarianceMatrix2DClassifier::computeSaliencyVals(glyphVars& glyph, TensorT
     glyph.csclcp[2] = cp;
 }
 
-void CovarianceMatrix2DClassifier::glyphAnalysis(glyphVars& glyph)
+void CovarianceMatrix2DClassifier::GlyphAnalysis(glyphVars& glyph)
 {
     double eps=1e-4;
     double evals[3], uv[2], abc[3];

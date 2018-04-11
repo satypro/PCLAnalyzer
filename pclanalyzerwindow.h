@@ -43,7 +43,7 @@ public slots:
     void ProcessCloud();
     void SetRmin(double rmin);
     void SetRmax(double rmax);
-    void SetScale(double scale);
+    void SetScale(int scale);
     void SetEps(double eps);
     void SetSigmaMin(double sigmin);
     void SetSigmaMax(double sigmax);
@@ -71,7 +71,7 @@ private:
     float scalarMax;
     float rmin;
     float rmax;
-    float scale;
+    int scale;
     ClassifierTypes classifierType;
 
     std::map<std::string, std::string>& PrepareRequest();

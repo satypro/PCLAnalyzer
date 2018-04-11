@@ -1,13 +1,12 @@
 #ifndef DIFFUSEDNORMALVOTINGCLASSIFIER_H
 #define DIFFUSEDNORMALVOTINGCLASSIFIER_H
 #include "ClassifiersBase.h"
-#include "Descriptors/PointDescriptor.h"
 
 class DiffusedNormalVotingClassifier : public ClassifiersBase
 {
 public:
     DiffusedNormalVotingClassifier();
-    std::vector<IPointDescriptor*> Classify();
+    std::vector<PointDescriptor*> Classify();
     Configuration* GetConfig();
 
     void setCloud(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud)
@@ -24,9 +23,9 @@ private:
     TensorType Compute3DBallVote(Eigen::Matrix<double, 3, 1> V, float *weight);
     bool MakeVector(pcl::PointXYZ source, pcl::PointXYZ neighbour, Eigen::Matrix<double, 3, 1>* V);
     glyphVars EigenDecomposition(TensorType tensor);
-    void getdiffusionvelocity(Eigen::Vector3f evals, metaVelData *diffVel);
-    void computeSaliencyVals(glyphVars& glyph);
-    void glyphAnalysis(glyphVars& glyph);
+    void Getdiffusionvelocity(Eigen::Vector3f evals, metaVelData *diffVel);
+    void ComputeSaliencyVals(glyphVars& glyph);
+    void GlyphAnalysis(glyphVars& glyph);
 };
 
 #endif // DIFFUSEDNORMALVOTINGCLASSIFIER_H

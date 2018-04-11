@@ -1,12 +1,11 @@
 #include "DiffusedNormalVotingClassifier.h"
-#include "Descriptors/PointDescriptor.h"
-#include <vector>
 #include <pcl/common/centroid.h>
 #include <pcl/common/common.h>
-#include <stdlib.h>
+#include <pcl/common/eigen.h>
 #include <teem/ten.h>
 #include "Utilities/CommonUtility.h"
 #include "Utilities/eig3.h"
+#include <iostream>
 
 DiffusedNormalVotingClassifier::DiffusedNormalVotingClassifier()
 {
@@ -20,11 +19,11 @@ Configuration* DiffusedNormalVotingClassifier::GetConfig()
     return _config;
 }
 
-std::vector<IPointDescriptor*> DiffusedNormalVotingClassifier::Classify()
+std::vector<PointDescriptor*> DiffusedNormalVotingClassifier::Classify()
 {
     size_t cloudSize = getCloud()->points.size();
-    std::vector<IPointDescriptor*> descriptors(cloudSize, new PointDescriptor());
-
+    std::vector<PointDescriptor*> descriptors(cloudSize, new PointDescriptor());
+    _searchNeighbour = GetSearchStrategy();
     char* pEnd;
     float _rmin = ::strtof(_config->GetValue("rmin").c_str(), &pEnd);
     float _rmax = ::strtof(_config->GetValue("rmax").c_str(), &pEnd);
@@ -47,28 +46,30 @@ std::vector<IPointDescriptor*> DiffusedNormalVotingClassifier::Classify()
         radius += dDeltaRadius;
     }
 
-    for(PointDescriptor* descriptor : descriptors)
+    for(int i = 0 ; i < descriptors.size() ; i++)
     {
-        descriptor->featNode.prob[0] = descriptor->featNode.prob[0]/_scale;
-        descriptor->featNode.prob[1] = descriptor->featNode.prob[1]/_scale;
-        descriptor->featNode.prob[2] = descriptor->featNode.prob[2]/_scale;
+        descriptors[i]->featNode.prob[0] = descriptors[i]->featNode.prob[0]/_scale;
+        descriptors[i]->featNode.prob[1] = descriptors[i]->featNode.prob[1]/_scale;
+        descriptors[i]->featNode.prob[2] = descriptors[i]->featNode.prob[2]/_scale;
 
-        descriptor->featNode.featStrength[0] = descriptor->featNode.featStrength[0]/_scale;
-        descriptor->featNode.featStrength[1] = descriptor->featNode.featStrength[1]/_scale;
-        descriptor->featNode.featStrength[2] = descriptor->featNode.featStrength[2]/_scale;
+        descriptors[i]->featNode.featStrength[0] = descriptors[i]->featNode.featStrength[0]/_scale;
+        descriptors[i]->featNode.featStrength[1] = descriptors[i]->featNode.featStrength[1]/_scale;
+        descriptors[i]->featNode.featStrength[2] = descriptors[i]->featNode.featStrength[2]/_scale;
 
-        descriptor->featNode.csclcp[0] = descriptor->featNode.csclcp[0]/_scale;
-        descriptor->featNode.csclcp[1] = descriptor->featNode.csclcp[1]/_scale;
-        descriptor->featNode.csclcp[2] = descriptor->featNode.csclcp[2]/_scale;
+        descriptors[i]->featNode.csclcp[0] = descriptors[i]->featNode.csclcp[0]/_scale;
+        descriptors[i]->featNode.csclcp[1] = descriptors[i]->featNode.csclcp[1]/_scale;
+        descriptors[i]->featNode.csclcp[2] = descriptors[i]->featNode.csclcp[2]/_scale;
 
-        descriptor->featNode.sum_eigen = descriptor->featNode.sum_eigen/_scale;
-        descriptor->featNode.planarity = descriptor->featNode.planarity/_scale;
-        descriptor->featNode.anisotropy = descriptor->featNode.anisotropy/_scale;
-        descriptor->featNode.sphericity = descriptor->featNode.sphericity/_scale;
-        descriptor->featNode.linearity = descriptor->featNode.linearity/_scale;
-        descriptor->featNode.omnivariance = descriptor->featNode.omnivariance/_scale;
-        descriptor->featNode.eigenentropy = descriptor->featNode.eigenentropy/_scale;
+        descriptors[i]->featNode.sum_eigen = descriptors[i]->featNode.sum_eigen/_scale;
+        descriptors[i]->featNode.planarity = descriptors[i]->featNode.planarity/_scale;
+        descriptors[i]->featNode.anisotropy = descriptors[i]->featNode.anisotropy/_scale;
+        descriptors[i]->featNode.sphericity = descriptors[i]->featNode.sphericity/_scale;
+        descriptors[i]->featNode.linearity = descriptors[i]->featNode.linearity/_scale;
+        descriptors[i]->featNode.omnivariance = descriptors[i]->featNode.omnivariance/_scale;
+        descriptors[i]->featNode.eigenentropy = descriptors[i]->featNode.eigenentropy/_scale;
     }
+
+    std::cout<<"DONE GENERATING"<<std::endl;
 
     return descriptors;
 }
@@ -81,12 +82,12 @@ void DiffusedNormalVotingClassifier::Process(std::vector<PointDescriptor*>& poin
     float _rmax = ::strtof(_config->GetValue("rmax").c_str(), &pEnd);
     float radius = ::strtof(_config->GetValue("radius").c_str(), &pEnd);
 
-    for (int i = 0; getCloud()->points.size(); i++)
+    for (int i = 0; i < getCloud()->points.size(); i++)
     {
         TensorType T = tensors[i];
         glyphVars glyph = EigenDecomposition(T);
-        computeSaliencyVals(glyph);
-        glyphAnalysis(glyph);
+        ComputeSaliencyVals(glyph);
+        GlyphAnalysis(glyph);
 
         pointDescriptors[i]->glyph = glyph;
 
@@ -170,8 +171,9 @@ void DiffusedNormalVotingClassifier::GetTensor(float radius, std::vector<TensorT
     char* pEnd;
     float lambdaN = ::strtof(_config->GetValue("lambdaN").c_str(), &pEnd);
 
-    int index = 0;
-    for(pcl::PointXYZ searchPoint : getCloud())
+    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud = getCloud();
+
+    for(int index = 0 ; index < cloud->points.size(); index++)
     {
         for(int j =0; j < 3; j++)
         {
@@ -180,12 +182,18 @@ void DiffusedNormalVotingClassifier::GetTensor(float radius, std::vector<TensorT
             tensors[index].evec2[j] = 0;
         }
 
+        if (isnan(cloud->points[index].x) || isnan(cloud->points[index].y) || isnan(cloud->points[index].z))
+        {
+            std::cout<<"The Point at : "<<index<<" NAN : "<<std::endl;
+            continue;
+        }
+
         _searchNeighbour->searchOption.searchParameter.radius = radius;
-        _neighbourCloud = _searchNeighbour->GetNeighbourCloud(searchPoint);
+        _neighbourCloud = _searchNeighbour->GetNeighbourCloud(cloud->points[index]);
 
         for (size_t i = 0; i < _neighbourCloud->points.size() ; i++)
         {
-            if (MakeVector(searchPoint, _neighbourCloud->points[i], &V))
+            if (MakeVector(getCloud()->points[index], _neighbourCloud->points[i], &V))
             {
                 TensorType ballTensor = Compute3DBallVote(V, &weight);
 
@@ -281,7 +289,7 @@ TensorType DiffusedNormalVotingClassifier::Compute3DBallVote(Eigen::Matrix<doubl
     return ballTensorVote;
 }
 
-glyphVars EigenDecomposition(TensorType tensor)
+glyphVars DiffusedNormalVotingClassifier::EigenDecomposition(TensorType tensor)
 {
     glyphVars glyph;
 
@@ -323,7 +331,7 @@ glyphVars EigenDecomposition(TensorType tensor)
     T += lamda1 * e1 * e1.transpose();
     T += lamda2 * e2 * e2.transpose();
 
-    getdiffusionvelocity(eigen_values, &diffVel);
+    Getdiffusionvelocity(eigen_values, &diffVel);
 
     glyph.evals[2] = diffVel.vel[0];       //evals0>evals>1>evals2  //vel2>vel1>vel0
     glyph.evals[1] = diffVel.vel[1];
@@ -344,7 +352,7 @@ glyphVars EigenDecomposition(TensorType tensor)
     return glyph;
 }
 
-void computeSaliencyVals(glyphVars& glyph)
+void DiffusedNormalVotingClassifier::ComputeSaliencyVals(glyphVars& glyph)
 {
     float len = glyph.evals[2] + glyph.evals[1] + glyph.evals[0];
 
@@ -362,7 +370,7 @@ void computeSaliencyVals(glyphVars& glyph)
     glyph.csclcp[2] = cp;
 }
 
-void glyphAnalysis(glyphVars& glyph)
+void DiffusedNormalVotingClassifier::GlyphAnalysis(glyphVars& glyph)
 {
     double eps=1e-4;
     double evals[3], uv[2], abc[3];
@@ -393,7 +401,8 @@ void glyphAnalysis(glyphVars& glyph)
     glyph.abc[1] = abc[1];
     glyph.abc[2] = abc[2];
 }
-void DiffusedNormalVotingClassifier::getdiffusionvelocity(Eigen::Vector3f evals, metaVelData *diffVel)
+
+void DiffusedNormalVotingClassifier::Getdiffusionvelocity(Eigen::Vector3f evals, metaVelData *diffVel)
 {
     char* pEnd;
     float _delta = ::strtof(_config->GetValue("delta").c_str(), &pEnd);

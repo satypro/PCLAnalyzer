@@ -1,7 +1,6 @@
 #ifndef BOUNDARYTENSORCLASSIFIER_H
 #define BOUNDARYTENSORCLASSIFIER_H
 #include "ClassifiersBase.h"
-#include "Descriptors/PointDescriptor.h"
 
 class BoundaryTensorClassifier : public ClassifiersBase
 {
@@ -24,7 +23,7 @@ public:
 
 public:
     BoundaryTensorClassifier();
-    std::vector<IPointDescriptor*> Classify();
+    std::vector<PointDescriptor*> Classify();
     Configuration* GetConfig();
 
     void setCloud(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud)

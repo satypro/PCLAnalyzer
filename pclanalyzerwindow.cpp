@@ -6,6 +6,7 @@
 #include <QHBoxLayout>
 #include <QVBoxLayout>
 #include <QFileDialog>
+#include <QProgressDialog>
 #include <QTextEdit>
 #include <QtOpenGL>
 #include "Display/Glwidget.h"
@@ -173,7 +174,7 @@ void PCLAnalyzerWindow::SetRmax(double rmax)
     }
 }
 
-void PCLAnalyzerWindow::SetScale(double scale)
+void PCLAnalyzerWindow::SetScale(int scale)
 {
     if(scale != this->scale)
     {
@@ -228,15 +229,20 @@ void PCLAnalyzerWindow::SetTensorType(int index)
 
 void PCLAnalyzerWindow::ProcessCloud()
 {
+    QProgressDialog* progress = new QProgressDialog("Task in Progreess","Cancel", 0, 100);
+    progress->setWindowModality(Qt::WindowModal);
+
     displayCloud = false;
 
     std::map<std::string, std::string>& request = PrepareRequest();
+    progress->setValue(10);
     MainController* controller = new MainController();
     _view = controller->Process("PROCESS", "PCLVIEWER", request);
-
+    progress->setValue(80);
     // View is ready with the model
     // now it can be vizualized
     displayCloud = true;
+    progress->setValue(100);
 }
 
 void PCLAnalyzerWindow::SetFilePath()

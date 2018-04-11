@@ -1,5 +1,7 @@
 #include "Tensor3DVotingClassifier.h"
-#include "Descriptors/PointDescriptor.h"
+#include <pcl/common/eigen.h>
+#include "Utilities/eig3.h"
+#include <teem/ten.h>
 
 Tensor3DVotingClassifier::Tensor3DVotingClassifier()
 {
@@ -13,10 +15,10 @@ Configuration* Tensor3DVotingClassifier::GetConfig()
     return _config;
 }
 
-std::vector<IPointDescriptor*> Tensor3DVotingClassifier::Classify()
+std::vector<PointDescriptor*> Tensor3DVotingClassifier::Classify()
 {
     size_t cloudSize = getCloud()->points.size();
-    std::vector<IPointDescriptor*> descriptors(cloudSize, new PointDescriptor());
+    std::vector<PointDescriptor*> descriptors(cloudSize, new PointDescriptor());
 
     char* pEnd;
     float _rmin = ::strtof(_config->GetValue("rmin").c_str(), &pEnd);
@@ -42,17 +44,17 @@ std::vector<IPointDescriptor*> Tensor3DVotingClassifier::Classify()
 
     for(PointDescriptor* descriptor : descriptors)
     {
-        descriptor.prob[0] = descriptor.prob[0]/_scale;
-        descriptor.prob[1] = descriptor.prob[1]/_scale;
-        descriptor.prob[2] = descriptor.prob[2]/_scale;
+        descriptor->featNode.prob[0] = descriptor->featNode.prob[0]/_scale;
+        descriptor->featNode.prob[1] = descriptor->featNode.prob[1]/_scale;
+        descriptor->featNode.prob[2] = descriptor->featNode.prob[2]/_scale;
 
-        descriptor.featStrength[0] = descriptor.featStrength[0]/_scale;
-        descriptor.featStrength[1] = descriptor.featStrength[1]/_scale;
-        descriptor.featStrength[2] = descriptor.featStrength[2]/_scale;
+        descriptor->featNode.featStrength[0] = descriptor->featNode.featStrength[0]/_scale;
+        descriptor->featNode.featStrength[1] = descriptor->featNode.featStrength[1]/_scale;
+        descriptor->featNode.featStrength[2] = descriptor->featNode.featStrength[2]/_scale;
 
-        descriptor.csclcp[0] = descriptor.csclcp[0]/_scale;
-        descriptor.csclcp[1] = descriptor.csclcp[1]/_scale;
-        descriptor.csclcp[2] = descriptor.csclcp[2]/_scale;
+        descriptor->featNode.csclcp[0] = descriptor->featNode.csclcp[0]/_scale;
+        descriptor->featNode.csclcp[1] = descriptor->featNode.csclcp[1]/_scale;
+        descriptor->featNode.csclcp[2] = descriptor->featNode.csclcp[2]/_scale;
     }
 
     return descriptors;
@@ -67,8 +69,8 @@ void Tensor3DVotingClassifier::Process(std::vector<PointDescriptor*>& pointDescr
     {
         TensorType T = tensors[i];
         glyphVars glyph = EigenDecomposition(T);
-        computeSaliencyVals(glyph);
-        glyphAnalysis(glyph);
+        ComputeSaliencyVals(glyph);
+        GlyphAnalysis(glyph);
 
         pointDescriptors[i]->glyph = glyph;
 
@@ -104,16 +106,24 @@ void Tensor3DVotingClassifier::Tensor3DVoting(float radius, std::vector<TensorTy
 
     int index = -1;
     float weight = 0.0;
-    for(pcl::PointXYZ searchPoint : getCloud()->points)
-    {   
-        index++;
+    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud = getCloud();
+
+    for(int index = 0 ; index < cloud->points.size(); index++)
+    {
+        if (isnan(cloud->points[index].x) || isnan(cloud->points[index].y) || isnan(cloud->points[index].z))
+        {
+            std::cout<<"The Point at : "<<index<<" NAN : "<<std::endl;
+            continue;
+        }
         weight = 0.0;
+        pcl::PointXYZ searchPoint = cloud->points[index];
+
         pcl::PointCloud<pcl::PointXYZ>::Ptr _neighbourCloud = _searchNeighbour->GetNeighbourCloud(searchPoint);
 
         for (pcl::PointXYZ neighbourPoint : _neighbourCloud->points)
         {
             Eigen::Matrix<double, 3, 1> Vect1;
-            Matrix3d vv(3,3), voteTemp(3,3);
+            Eigen::Matrix<double, 3, 3> vv(3,3), voteTemp(3,3);
 
             Vect1(0,0) = double(neighbourPoint.x - searchPoint.x);
             Vect1(1,0) = double(neighbourPoint.y - searchPoint.y);
@@ -128,26 +138,26 @@ void Tensor3DVotingClassifier::Tensor3DVoting(float radius, std::vector<TensorTy
 
             voteTemp =  coeff * vv;
 
-            tensor3DVotins[i].evec0[0] += voteTemp(0,0);
-            tensor3DVotins[i].evec0[1] += voteTemp(0,1);
-            tensor3DVotins[i].evec0[2] += voteTemp(0,2);
+            tensor3DVotins[index].evec0[0] += voteTemp(0,0);
+            tensor3DVotins[index].evec0[1] += voteTemp(0,1);
+            tensor3DVotins[index].evec0[2] += voteTemp(0,2);
 
-            tensor3DVotins[i].evec1[0] += voteTemp(1,0);
-            tensor3DVotins[i].evec1[1] += voteTemp(1,1);
-            tensor3DVotins[i].evec1[2] += voteTemp(1,2);
+            tensor3DVotins[index].evec1[0] += voteTemp(1,0);
+            tensor3DVotins[index].evec1[1] += voteTemp(1,1);
+            tensor3DVotins[index].evec1[2] += voteTemp(1,2);
 
-            tensor3DVotins[i].evec2[0] += voteTemp(2,0);
-            tensor3DVotins[i].evec2[1] += voteTemp(2,1);
-            tensor3DVotins[i].evec2[2] += voteTemp(2,2);
+            tensor3DVotins[index].evec2[0] += voteTemp(2,0);
+            tensor3DVotins[index].evec2[1] += voteTemp(2,1);
+            tensor3DVotins[index].evec2[2] += voteTemp(2,2);
         }
 
         if (weight != 0.0 )
         {
             for(int j =0; j < 3; j++)
             {
-                tensor3DVotins[i].evec0[j] = tensor3DVotins[i].evec0[j]/weight;
-                tensor3DVotins[i].evec1[j] = tensor3DVotins[i].evec1[j]/weight;
-                tensor3DVotins[i].evec2[j] = tensor3DVotins[i].evec2[j]/weight;
+                tensor3DVotins[index].evec0[j] = tensor3DVotins[index].evec0[j]/weight;
+                tensor3DVotins[index].evec1[j] = tensor3DVotins[index].evec1[j]/weight;
+                tensor3DVotins[index].evec2[j] = tensor3DVotins[index].evec2[j]/weight;
             }
         }
     }
@@ -204,7 +214,7 @@ void Tensor3DVotingClassifier::ComputeSaliencyVals(glyphVars& glyph)
     glyph.csclcp[2] = cp;
 }
 
-void Tensor3DVotingClassifier::glyphAnalysis(glyphVars& glyph)
+void Tensor3DVotingClassifier::GlyphAnalysis(glyphVars& glyph)
 {
     double eps=1e-4;
     double evals[3], uv[2], abc[3];

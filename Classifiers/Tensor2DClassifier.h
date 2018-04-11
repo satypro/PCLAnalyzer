@@ -5,8 +5,25 @@
 class Tensor2DClassifier : public ClassifiersBase
 {
 public:
+    struct Derivatives
+    {
+        float Ix;
+        float Iy;
+        float Ixx;
+        float Iyy;
+        float Ixy;
+        float Iyx;
+        float Ixxx;
+        float Ixxy;
+        float Ixyy;
+        float Iyyy;
+
+        Derivatives(){}
+    };
+
+public:
     Tensor2DClassifier();
-    std::vector<IPointDescriptor*> Classify();
+    std::vector<PointDescriptor*> Classify();
     Configuration* GetConfig();
 
     void setCloud(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud)
@@ -15,12 +32,16 @@ public:
     }
 private:
     Configuration* _config;
+    SearchNeighbourBase* _searchNeighbour;
+    pcl::PointCloud<pcl::PointXYZ>::Ptr _neighbourCloud;
+
+    void Process(std::vector<PointDescriptor*>& pointDescriptors,
+                 std::vector<TensorType>& tensors);
     void CalculatePartialDerivative(float radius, std::vector<Derivatives>& derivatives);
     void Tensor2D(float radius, std::vector<TensorType>& tensor2Ds);
     glyphVars EigenDecomposition(TensorType tensor);
-    void ComputeSaliencyVals(glyphVars& glyph, TensorType& averaged_tensor);
-    void glyphAnalysis(glyphVars& glyph);
-    void Process(std::vector<PointDescriptor*>& pointDescriptors, std::vector<TensorType>& tensors, std::vector<TensorType>& averaged_tensor)
+    void ComputeSaliencyVals(glyphVars& glyph);
+    void GlyphAnalysis(glyphVars& glyph);
 };
 
 #endif // TENSOR2DCLASSIFIER_H

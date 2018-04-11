@@ -1,6 +1,7 @@
 #include "ClassifiersFactory.h"
 #include "Classifier.h"
 #include "BoundaryTensorClassifier.h"
+#include "DiffusedNormalVotingClassifier.h"
 
 std::map<ClassifierTypes, ClassifiersBase*> ClassifiersFactory::_classifierInstanceMap;
 
@@ -34,7 +35,7 @@ ClassifiersBase* ClassifiersFactory::GetClassifier(ClassifierTypes classifierTyp
             object = new BoundaryTensorClassifier();
         break;
         case C_3DCM:
-            object = new Classifier();
+            object = new DiffusedNormalVotingClassifier();
         break;
         case C_3DMCM:
             object = new Classifier();

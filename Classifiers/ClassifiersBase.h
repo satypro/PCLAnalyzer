@@ -7,14 +7,14 @@
 #include "Types/datatypes.h"
 #include "ClassifierLabels.h"
 #include "Config/Configuration.h"
-#include "Descriptors/IPointDescriptor.h"
+#include "Descriptors/PointDescriptor.h"
 #include "Neighbours/SearchNeighbourBase.h"
 
 class ClassifiersBase
 {
 public:
     ClassifiersBase();
-    virtual std::vector<IPointDescriptor*> Classify() = 0 ;
+    virtual std::vector<PointDescriptor*> Classify() = 0 ;
     virtual Configuration* GetConfig() = 0;
 
     void virtual setSource(pcl::PointXYZ sourcePoint)

@@ -1,6 +1,7 @@
 #include "CovarianceMatrixClassifier.h"
 #include <pcl/common/centroid.h>
 #include <pcl/common/common.h>
+#include <pcl/common/eigen.h>
 #include <teem/ten.h>
 #include "Utilities/eig3.h"
 
@@ -16,10 +17,10 @@ Configuration* CovarianceMatrixClassifier::GetConfig()
     return _config;
 }
 
-std::vector<IPointDescriptor*> CovarianceMatrixClassifier::Classify()
+std::vector<PointDescriptor*> CovarianceMatrixClassifier::Classify()
 {
     size_t cloudSize = getCloud()->points.size();
-    std::vector<IPointDescriptor*> descriptors(cloudSize, new PointDescriptor());
+    std::vector<PointDescriptor*> descriptors(cloudSize, new PointDescriptor());
 
     char* pEnd;
     float _rmin = ::strtof(_config->GetValue("rmin").c_str(), &pEnd);
@@ -38,11 +39,13 @@ std::vector<IPointDescriptor*> CovarianceMatrixClassifier::Classify()
     while(radius <= _rmax)
     {
         std::vector<TensorType> tensors(cloudSize, TensorType());
-        std::vector<TensorType> averaged_tensor(cloudSize, TensorType())
+        std::vector<TensorType> averaged_tensor(cloudSize, TensorType());
         GetCoVaraianceTensor(radius, tensors);
         Process(descriptors, tensors, averaged_tensor);
         radius += dDeltaRadius;
     }
+
+    return descriptors;
 }
 
 void CovarianceMatrixClassifier::Process(std::vector<PointDescriptor*>& pointDescriptors, std::vector<TensorType>& tensors, std::vector<TensorType>& averaged_tensor)
@@ -53,8 +56,8 @@ void CovarianceMatrixClassifier::Process(std::vector<PointDescriptor*>& pointDes
     for (int i = 0; getCloud()->points.size(); i++)
     {
         glyphVars glyph = EigenDecomposition(tensors[i]);
-        computeSaliencyVals(glyph, averaged_tensor[i]);
-        glyphAnalysis(glyph);
+        ComputeSaliencyVals(glyph, averaged_tensor[i]);
+        GlyphAnalysis(glyph);
 
         pointDescriptors[i]->glyph = glyph;
 
@@ -139,13 +142,12 @@ void CovarianceMatrixClassifier::Process(std::vector<PointDescriptor*>& pointDes
 
 void CovarianceMatrixClassifier::GetCoVaraianceTensor(float radius, std::vector<TensorType>& tensors)
 {
-    int index = -1;
     _searchNeighbour->searchOption.searchParameter.radius = radius;
 
-    for(pcl::PointXYZ searchPoint : getCloud())
-    {
-        index++;
+    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud = getCloud();
 
+    for(int index = 0 ; index < cloud->points.size(); index++)
+    {
         for(int j =0; j < 3; j++)
         {
             tensors[index].evec0[j] = 0;
@@ -153,7 +155,12 @@ void CovarianceMatrixClassifier::GetCoVaraianceTensor(float radius, std::vector<
             tensors[index].evec2[j] = 0;
         }
 
-        _neighbourCloud = _searchNeighbour->GetNeighbourCloud(searchPoint);
+        if (isnan(cloud->points[index].x) || isnan(cloud->points[index].y) || isnan(cloud->points[index].z))
+        {
+            std::cout<<"The Point at : "<<index<<" NAN : "<<std::endl;
+            continue;
+        }
+        _neighbourCloud = _searchNeighbour->GetNeighbourCloud(cloud->points[index]);
         
         Eigen::Vector4f xyz_centroid;
         pcl::compute3DCentroid(*_neighbourCloud, xyz_centroid);
@@ -207,7 +214,7 @@ glyphVars CovarianceMatrixClassifier::EigenDecomposition(TensorType tensor)
     glyph.evecs[8] = V[2][0];
 }
 
-void CovarianceMatrixClassifier::computeSaliencyVals(glyphVars& glyph, TensorType& averaged_tensor)
+void CovarianceMatrixClassifier::ComputeSaliencyVals(glyphVars& glyph, TensorType& averaged_tensor)
 {
     float len = glyph.evals[2] + glyph.evals[1] + glyph.evals[0];
 
@@ -257,7 +264,7 @@ void CovarianceMatrixClassifier::computeSaliencyVals(glyphVars& glyph, TensorTyp
     glyph.csclcp[2] = cp;
 }
 
-void CovarianceMatrixClassifier::glyphAnalysis(glyphVars& glyph)
+void CovarianceMatrixClassifier::GlyphAnalysis(glyphVars& glyph)
 {
        double eps=1e-4;
        double evals[3], uv[2], abc[3];

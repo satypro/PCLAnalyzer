@@ -1,5 +1,4 @@
 #include "ModCovarianceMatrixClassifier.h"
-#include "Descriptors/PointDescriptor.h"
 #include <pcl/common/common.h>
 #include <pcl/common/eigen.h>
 #include <teem/ten.h>
@@ -17,10 +16,10 @@ Configuration* ModCovarianceMatrixClassifier::GetConfig()
     return _config;
 }
 
-std::vector<IPointDescriptor*> ModCovarianceMatrixClassifier::Classify()
+std::vector<PointDescriptor*> ModCovarianceMatrixClassifier::Classify()
 {
     size_t cloudSize = getCloud()->points.size();
-    std::vector<IPointDescriptor*> descriptors(cloudSize, new PointDescriptor());
+    std::vector<PointDescriptor*> descriptors(cloudSize, new PointDescriptor());
 
     char* pEnd;
     float _rmin = ::strtof(_config->GetValue("rmin").c_str(), &pEnd);
@@ -74,8 +73,8 @@ void ModCovarianceMatrixClassifier::Process(std::vector<PointDescriptor*>& point
     {
         TensorType T = tensors[i];
         glyphVars glyph = EigenDecomposition(T);
-        computeSaliencyVals(glyph);
-        glyphAnalysis(glyph);
+        ComputeSaliencyVals(glyph);
+        GlyphAnalysis(glyph);
 
         pointDescriptors[i]->glyph = glyph;
 
@@ -104,12 +103,13 @@ void ModCovarianceMatrixClassifier::Process(std::vector<PointDescriptor*>& point
 void ModCovarianceMatrixClassifier::GetCoVaraianceTensor(float radius, std::vector<TensorType>& tensors)
 {
     int index = -1;
+    float _sigma = 1.0;
     _searchNeighbour->searchOption.searchParameter.radius = radius;
 
-    for(pcl::PointXYZ searchPoint : getCloud())
-    {
-        index++;
+    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud = getCloud();
 
+    for(int index = 0 ; index < cloud->points.size(); index++)
+    {
         for(int j =0; j < 3; j++)
         {
             tensors[index].evec0[j] = 0;
@@ -117,14 +117,21 @@ void ModCovarianceMatrixClassifier::GetCoVaraianceTensor(float radius, std::vect
             tensors[index].evec2[j] = 0;
         }
 
+        if (isnan(cloud->points[index].x) || isnan(cloud->points[index].y) || isnan(cloud->points[index].z))
+        {
+            std::cout<<"The Point at : "<<index<<" NAN : "<<std::endl;
+            continue;
+        }
+
+        pcl::PointXYZ searchPoint = cloud->points[index];
         _neighbourCloud = _searchNeighbour->GetNeighbourCloud(searchPoint);
 
         float  weight = 0.0;
 
         for (pcl::PointXYZ neighbourPoint : _neighbourCloud->points)
         {
-            ColumnVector Vect1;
-            Matrix3d vv(3,3), voteTemp(3,3);
+            Eigen::Matrix<double, 3, 1> Vect1;
+            Eigen::Matrix<double, 3, 3> vv(3,3), voteTemp(3,3);
 
             Vect1(0,0) = double((searchPoint.x -  neighbourPoint.x));
             Vect1(1,0) = double((searchPoint.y - neighbourPoint.y));
@@ -209,7 +216,7 @@ glyphVars ModCovarianceMatrixClassifier::EigenDecomposition(TensorType tensor)
     glyph.evecs[8] = V[2][0];
 }
 
-void ModCovarianceMatrixClassifier::computeSaliencyVals(glyphVars& glyph, TensorType& averaged_tensor)
+void ModCovarianceMatrixClassifier::ComputeSaliencyVals(glyphVars& glyph)
 {
     float len = glyph.evals[2] + glyph.evals[1] + glyph.evals[0];
 
@@ -227,7 +234,7 @@ void ModCovarianceMatrixClassifier::computeSaliencyVals(glyphVars& glyph, Tensor
     glyph.csclcp[2] = cp;
 }
 
-void ModCovarianceMatrixClassifier::glyphAnalysis(glyphVars& glyph)
+void ModCovarianceMatrixClassifier::GlyphAnalysis(glyphVars& glyph)
 {
     double eps=1e-4;
     double evals[3], uv[2], abc[3];

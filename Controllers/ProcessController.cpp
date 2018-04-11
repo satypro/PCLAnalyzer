@@ -66,25 +66,6 @@ IViewModel* ProcessController::Process(std::map<std::string, std::string> reques
     model->cloud = cloud;
     model->descriptor = classifier->Classify();
 
-   /* // 1. For each point in the cloud classify the point.
-    size_t size = cloud->points.size ();
-    model->cloud = cloud;
-    for (size_t i = 0; i < size; ++i)
-    {
-        if (isnan(cloud->points[i].x) || isnan(cloud->points[i].y) || isnan(cloud->points[i].z))
-        {
-            std::cout<<"The Point at : "<<i<<" NAN : "<<std::endl;
-            continue;
-        }
-        
-        classifier->setSource(cloud->points[i]);        
-        IPointDescriptor* pointdescriptor = classifier->Classify();
-        model->descriptor.push_back(pointdescriptor);
-
-        std::cout<<"Progress : "<<ceil(((float)i/(float)size)*100)<<"%"<<std::endl;
-    }
-    */
-
     StructFeatClassification(model);
 
     return model;

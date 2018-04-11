@@ -7,7 +7,7 @@
 #include "Types/datatypes.h"
 #include "Classifiers/ClassifierLabels.h"
 #include "Models/IViewModel.h"
-#include "Descriptors/IPointDescriptor.h"
+#include "Descriptors/PointDescriptor.h"
 
 typedef pcl::PointCloud<pcl::PointXYZ>::Ptr CloudType;
 
@@ -15,7 +15,7 @@ class ViewModel : public IViewModel
 {
 public:
     CloudType cloud;
-    std::vector<IPointDescriptor*> descriptor;
+    std::vector<PointDescriptor*> descriptor;
 };
 
 #endif // VIEWMODEL_H

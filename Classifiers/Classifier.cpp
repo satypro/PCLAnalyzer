@@ -2,11 +2,9 @@
 #include <vector>
 #include <pcl/common/centroid.h>
 #include <pcl/common/common.h>
-#include <stdlib.h>
 #include <teem/ten.h>
 #include "Utilities/CommonUtility.h"
 #include "Utilities/eig3.h"
-#include "Descriptors/PointDescriptor.h"
 
 Classifier::Classifier()
 {
@@ -20,9 +18,9 @@ Configuration* Classifier::GetConfig()
     return _config;
 }
 
-std::vector<IPointDescriptor*> Classifier::Classify()
+std::vector<PointDescriptor*> Classifier::Classify()
 {
-    std::vector<IPointDescriptor*> descriptors;
+    std::vector<PointDescriptor*> descriptors;
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud = getCloud();
     size_t size = cloud->points.size ();
     for (size_t i = 0; i < size; ++i)
@@ -34,7 +32,7 @@ std::vector<IPointDescriptor*> Classifier::Classify()
         }
 
         this->setSource(cloud->points[i]);
-        IPointDescriptor* pointdescriptor = Process();
+        PointDescriptor* pointdescriptor = Process();
         descriptors.push_back(pointdescriptor);
         std::cout<<"Progress : "<<ceil(((float)i/(float)size)*100)<<"%"<<std::endl;
     }
@@ -42,7 +40,7 @@ std::vector<IPointDescriptor*> Classifier::Classify()
     return descriptors;
 }
 
-IPointDescriptor* Classifier::Process()
+PointDescriptor* Classifier::Process()
 {
     //The descriptor of the point we will process
     PointDescriptor* pointDescriptor = new PointDescriptor;

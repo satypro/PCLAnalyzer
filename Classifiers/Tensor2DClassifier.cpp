@@ -1,5 +1,7 @@
 #include "Tensor2DClassifier.h"
-#include "Descriptors/PointDescriptor.h"
+#include <pcl/common/eigen.h>
+#include "Utilities/eig3.h"
+#include <teem/ten.h>
 
 Tensor2DClassifier::Tensor2DClassifier()
 {
@@ -13,10 +15,10 @@ Configuration* Tensor2DClassifier::GetConfig()
     return _config;
 }
 
-std::vector<IPointDescriptor*> Tensor2DClassifier::Classify()
+std::vector<PointDescriptor*> Tensor2DClassifier::Classify()
 {
     size_t cloudSize = getCloud()->points.size();
-    std::vector<IPointDescriptor*> descriptors(cloudSize, new PointDescriptor());
+    std::vector<PointDescriptor*> descriptors(cloudSize, new PointDescriptor());
 
     char* pEnd;
     float _rmin = ::strtof(_config->GetValue("rmin").c_str(), &pEnd);
@@ -35,34 +37,34 @@ std::vector<IPointDescriptor*> Tensor2DClassifier::Classify()
     while(radius <= _rmax)
     {
         std::vector<TensorType> tensors(cloudSize, TensorType());
-        std::vector<TensorType> averaged_tensor(cloudSize, TensorType());
-        GetCoVaraianceTensor(radius, tensors);
-        Process(descriptors, tensors, averaged_tensor);
+        Tensor2D(radius, tensors);
+        Process(descriptors, tensors);
         radius += dDeltaRadius;
     }
 
     for(PointDescriptor* descriptor : descriptors)
     {
-        descriptor.prob[0] = descriptor.prob[0]/_scale;
-        descriptor.prob[1] = descriptor.prob[1]/_scale;
-        descriptor.prob[2] = descriptor.prob[2]/_scale;
+        descriptor->featNode.prob[0] = descriptor->featNode.prob[0]/_scale;
+        descriptor->featNode.prob[1] = descriptor->featNode.prob[1]/_scale;
+        descriptor->featNode.prob[2] = descriptor->featNode.prob[2]/_scale;
 
-        descriptor.featStrength[0] = descriptor.featStrength[0]/_scale;
-        descriptor.featStrength[1] = descriptor.featStrength[1]/_scale;
-        descriptor.featStrength[2] = descriptor.featStrength[2]/_scale;
+        descriptor->featNode.featStrength[0] = descriptor->featNode.featStrength[0]/_scale;
+        descriptor->featNode.featStrength[1] = descriptor->featNode.featStrength[1]/_scale;
+        descriptor->featNode.featStrength[2] = descriptor->featNode.featStrength[2]/_scale;
 
-        descriptor.csclcp[0] = descriptor.csclcp[0]/_scale;
-        descriptor.csclcp[1] = descriptor.csclcp[1]/_scale;
-        descriptor.csclcp[2] = descriptor.csclcp[2]/_scale;
-        descriptor.sphericity /= _scale;
-        descriptor.anisotropy /= _scale;
-        descriptor.sum_eigen /= _scale;
+        descriptor->featNode.csclcp[0] = descriptor->featNode.csclcp[0]/_scale;
+        descriptor->featNode.csclcp[1] = descriptor->featNode.csclcp[1]/_scale;
+        descriptor->featNode.csclcp[2] = descriptor->featNode.csclcp[2]/_scale;
+        descriptor->featNode.sphericity /= _scale;
+        descriptor->featNode.anisotropy /= _scale;
+        descriptor->featNode.sum_eigen /= _scale;
     }
 
     return descriptors;
 }
 
-void Tensor2DClassifier::Process(std::vector<PointDescriptor*>& pointDescriptors, std::vector<TensorType>& tensors, std::vector<TensorType>& averaged_tensor)
+void Tensor2DClassifier::Process(std::vector<PointDescriptor*>& pointDescriptors,
+                                 std::vector<TensorType>& tensors)
 {
     char* pEnd;
     float _epsi = ::strtof(_config->GetValue("epsi").c_str(), &pEnd);
@@ -71,8 +73,8 @@ void Tensor2DClassifier::Process(std::vector<PointDescriptor*>& pointDescriptors
     {
         TensorType T = tensors[i];
         glyphVars glyph = EigenDecomposition(T);
-        computeSaliencyVals(glyph);
-        glyphAnalysis(glyph);
+        ComputeSaliencyVals(glyph);
+        GlyphAnalysis(glyph);
 
         pointDescriptors[i]->glyph = glyph;
 
@@ -122,15 +124,14 @@ void Tensor2DClassifier::Process(std::vector<PointDescriptor*>& pointDescriptors
     }
 }
 
-
 void Tensor2DClassifier::CalculatePartialDerivative(float radius, std::vector<Derivatives>& derivatives)
 {
     int index = 0;
     for(pcl::PointXYZ searchPoint : getCloud())
     {
-        _searchNeighbour->searchOption.searchParameter.radius = radius;
+        this->_searchNeighbour->searchOption.searchParameter.radius = radius;
         pcl::PointCloud<pcl::PointXYZ>::Ptr _neighbourCloud =
-                _searchNeighbour->GetNeighbourCloud(searchPoint);
+                this->_searchNeighbour->GetNeighbourCloud(searchPoint);
 
         float Wx = 0.0;
         float Wy = 0.0;
@@ -174,58 +175,65 @@ void Tensor2DClassifier::CalculatePartialDerivative(float radius, std::vector<De
     }
 }
 
-    void Tensor2DClassifier::Tensor2D(float radius, std::vector<TensorType>& tensor2Ds)
+void Tensor2DClassifier::Tensor2D(float radius, std::vector<TensorType>& tensor2Ds)
+{
+    std::vector<Derivatives> derivatives(getCloud()->points.size(), Derivatives());
+    CalculatePartialDerivative(radius, derivatives);
+
+    _searchNeighbour->searchOption.searchParameter.radius = radius;
+
+    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud = getCloud();
+
+    for(int index = 0 ; index < cloud->points.size(); index++)
     {
-        std::vector<Derivatives> derivatives(getCloud()->points.size(), Derivatives());
-        CalculatePartialDerivative(radius, derivatives);
+        if (isnan(cloud->points[index].x) || isnan(cloud->points[index].y) || isnan(cloud->points[index].z))
+        {
+            std::cout<<"The Point at : "<<index<<" NAN : "<<std::endl;
+            continue;
+        }
 
-        _searchNeighbour->searchOption.searchParameter.radius = radius;
+        float weight = 0.0;
+        pcl::PointXYZ searchPoint = cloud->points[index];
+        pcl::PointCloud<pcl::PointXYZ>::Ptr _neighbourCloud =
+                _searchNeighbour->GetNeighbourCloud(searchPoint);
 
-        int index = 0;
-        for(pcl::PointXYZ searchPoint : getCloud()->points)
-        {   
-            float weight = 0.0;
+        for (pcl::PointXYZ neighbourPoint : _neighbourCloud->points)
+        {
+            Eigen::Matrix<double, 3, 1> Vect1;
+            Vect1(0,0) = double(neighbourPoint.x - searchPoint.x);
+            Vect1(1,0) = double(neighbourPoint.y - searchPoint.y);
+            Vect1(2,0) = double(neighbourPoint.z - searchPoint.z);
 
-            pcl::PointCloud<pcl::PointXYZ>::Ptr _neighbourCloud =
-                    _searchNeighbour->GetNeighbourCloud(searchPoint);
+            double  s = Vect1.norm();
 
-            for (pcl::PointXYZ neighbourPoint : _neighbourCloud->points)
+            double coeff = 1/(2*3.141592653*radius*radius)*exp (-1 * s*s/(2*radius*radius));
+
+            weight+= coeff;
+
+            tensor2Ds[index].evec0[0] += coeff * derivatives[index].Ix * derivatives[index].Ix;
+            tensor2Ds[index].evec0[1] += coeff * derivatives[index].Ix * derivatives[index].Iy;
+            tensor2Ds[index].evec0[2] = 0;
+
+            tensor2Ds[index].evec1[0] += coeff * derivatives[index].Ix * derivatives[index].Iy;
+            tensor2Ds[index].evec1[1] += coeff * derivatives[index].Iy * derivatives[index].Iy;
+            tensor2Ds[index].evec1[2] = 0;
+
+            tensor2Ds[index].evec2[0] = 0;
+            tensor2Ds[index].evec2[1] = 0;
+            tensor2Ds[index].evec2[2] = 0;
+        }
+
+        if(weight != 0.0)
+        {
+            for(int j =0; j < 3; j++)
             {
-                ColumnVector Vect1;
-                Vect1(0,0) = double(neighbourPoint.x - searchPoint.x);
-                Vect1(1,0) = double(neighbourPoint.y - searchPoint.y);
-                Vect1(2,0) = double(neighbourPoint.z - searchPoint.z);
-
-                double  s = Vect1.norm();
-
-                double coeff = 1/(2*3.141592653*radius*radius)*exp (-1 * s*s/(2*radius*radius));
-
-                weight+= coeff;
-
-                tensor2Ds[i].evec0[0] += coeff * derivatives[i].Ix * derivatives[i].Ix;
-                tensor2Ds[i].evec0[1] += coeff * derivatives[i].Ix * derivatives[i].Iy;
-                tensor2Ds[i].evec0[2] = 0;
-
-                tensor2Ds[i].evec1[0] += coeff * derivatives[i].Ix * derivatives[i].Iy;
-                tensor2Ds[i].evec1[1] += coeff * derivatives[i].Iy * derivatives[i].Iy;
-                tensor2Ds[i].evec1[2] = 0;
-
-                tensor2Ds[i].evec2[0] = 0;
-                tensor2Ds[i].evec2[1] = 0;
-                tensor2Ds[i].evec2[2] = 0;
+                tensor2Ds[index].evec0[j] = tensor2Ds[index].evec0[j]/weight;
+                tensor2Ds[index].evec1[j] = tensor2Ds[index].evec1[j]/weight;
+                tensor2Ds[index].evec2[j] = tensor2Ds[index].evec2[j]/weight;
             }
-
-            if(weight != 0.0)
-            {
-                for(int j =0; j < 3; j++)
-                {
-                    tensor2Ds[i].evec0[j] = tensor2Ds[i].evec0[j]/weight;
-                    tensor2Ds[i].evec1[j] = tensor2Ds[i].evec1[j]/weight;
-                    tensor2Ds[i].evec2[j] = tensor2Ds[i].evec2[j]/weight;
-                }
-            }   
         }
     }
+}
 
 glyphVars Tensor2DClassifier::EigenDecomposition(TensorType tensor)
 {
@@ -258,7 +266,7 @@ glyphVars Tensor2DClassifier::EigenDecomposition(TensorType tensor)
     glyph.evecs[8] = V[2][0];
 }
 
-void Tensor2DClassifier::glyphAnalysis(glyphVars& glyph)
+void Tensor2DClassifier::GlyphAnalysis(glyphVars& glyph)
 {
     double eps=1e-4;
     double evals[3], uv[2], abc[3];
@@ -295,4 +303,22 @@ void Tensor2DClassifier::glyphAnalysis(glyphVars& glyph)
     glyph.abc[0] = abc[0];
     glyph.abc[1] = abc[1];
     glyph.abc[2] = abc[2];
+}
+
+void Tensor2DClassifier::ComputeSaliencyVals(glyphVars& glyph)
+{
+    float cl = 0.0, cp = 0.0, cs = 0.0;
+
+    float len = glyph.evals[2] + glyph.evals[1] + glyph.evals[0];
+
+    if(len!= 0.0)
+    {
+        cl = (glyph.evals[0] - glyph.evals[1])/len; //ev0>ev1>ev2
+        cp = (2*(glyph.evals[1] - glyph.evals[2]))/len ;
+        cs = 1 - (cl+cp); //1.0 - cl - cp;
+    }
+
+    glyph.csclcp[1] = cl;
+    glyph.csclcp[0] = cs;
+    glyph.csclcp[2] = cp;
 }
