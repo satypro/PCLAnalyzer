@@ -15,6 +15,11 @@ public:
     }
 private:
     Configuration* _config;
+    void Tensor3DVoting(float radius, std::vector<TensorType>& tensor3DVotins);
+    glyphVars EigenDecomposition(TensorType tensor);
+    void ComputeSaliencyVals(glyphVars& glyph);
+    void glyphAnalysis(glyphVars& glyph);
+    void Process(std::vector<PointDescriptor*>& pointDescriptors, std::vector<TensorType>& tensors);
 };
 
 #endif // TENSOR3DVOTINGCLASSIFIER_H

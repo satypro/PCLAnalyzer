@@ -35,7 +35,7 @@ std::vector<IPointDescriptor*> Tensor2DClassifier::Classify()
     while(radius <= _rmax)
     {
         std::vector<TensorType> tensors(cloudSize, TensorType());
-        std::vector<TensorType> averaged_tensor(cloudSize, TensorType())
+        std::vector<TensorType> averaged_tensor(cloudSize, TensorType());
         GetCoVaraianceTensor(radius, tensors);
         Process(descriptors, tensors, averaged_tensor);
         radius += dDeltaRadius;
