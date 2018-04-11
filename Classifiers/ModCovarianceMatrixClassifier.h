@@ -17,9 +17,8 @@ public:
 private:
     Configuration* _config;
     SearchNeighbourBase* _searchNeighbour;
-    IPointDescriptor* Process();
-    TensorType GetCoVaraianceTensor(float radius);
-    void MeasureProbability(PointDescriptor* pointDescriptor, TensorType& averaged_tensor, TensorType& covarianceTensor);
+    void Process(std::vector<PointDescriptor*>& pointDescriptors, std::vector<TensorType>& tensors);
+    void GetCoVaraianceTensor(float radius, std::vector<TensorType>& tensors);
     glyphVars EigenDecomposition(TensorType tensor);
     void computeSaliencyVals(glyphVars& glyph, TensorType& averaged_tensor);
     void glyphAnalysis(glyphVars& glyph);

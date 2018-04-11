@@ -18,189 +18,160 @@ Configuration* CovarianceMatrixClassifier::GetConfig()
 
 std::vector<IPointDescriptor*> CovarianceMatrixClassifier::Classify()
 {
-    std::vector<IPointDescriptor*> descriptors;
-
-    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud = getCloud();
-    size_t size = cloud->points.size ();
-    for (size_t i = 0; i < size; ++i)
-    {
-        if (isnan(cloud->points[i].x) || isnan(cloud->points[i].y) || isnan(cloud->points[i].z))
-        {
-            std::cout<<"The Point at : "<<i<<" NAN : "<<std::endl;
-            continue;
-        }
-
-        this->setSource(cloud->points[i]);
-        IPointDescriptor* pointdescriptor = Process();
-        descriptors.push_back(pointdescriptor);
-        std::cout<<"Progress : "<<ceil(((float)i/(float)size)*100)<<"%"<<std::endl;
-    }
-
-    return descriptors;
-}
-
-IPointDescriptor* CovarianceMatrixClassifier::Process()
-{
-    PointDescriptor* pointDescriptor = new PointDescriptor;
-    _searchNeighbour = GetSearchStrategy();
+    size_t cloudSize = getCloud()->points.size();
+    std::vector<IPointDescriptor*> descriptors(cloudSize, new PointDescriptor());
 
     char* pEnd;
-    float _epsi = ::strtof(_config->GetValue("epsi").c_str(), &pEnd);
     float _rmin = ::strtof(_config->GetValue("rmin").c_str(), &pEnd);
     float _rmax = ::strtof(_config->GetValue("rmax").c_str(), &pEnd);
-    // float radius = ::strtof(_config->GetValue("radius").c_str(), &pEnd);
     float _scale = ::strtof(_config->GetValue("scale").c_str(), &pEnd);
 
-    if(_scale == 0.0 || _rmin == 0.0 || _rmax == 0.0 || _rmin >= _rmax || getCloud()->points.size() == 0)
+    /*if(_scale == 0.0 || _rmin == 0.0 || _rmax == 0.0 || _rmax >= _rmin || getCloud()->points.size() == 0)
     {
         std::cout<<"invalid configuration parameters for classification module"<<std::endl;
-        return pointDescriptor;
-    }
+        return descriptors;
+    }*/
 
     float dDeltaRadius = (_rmax - _rmin)/(_scale - 1.0);
     float radius = _rmin;
 
-    TensorType averaged_tensor;
-    TensorType covarianceTensor;
-
     while(radius <= _rmax)
     {
-        covarianceTensor = GetCoVaraianceTensor(radius);
-        MeasureProbability(pointDescriptor, averaged_tensor, covarianceTensor);
+        std::vector<TensorType> tensors(cloudSize, TensorType());
+        std::vector<TensorType> averaged_tensor(cloudSize, TensorType())
+        GetCoVaraianceTensor(radius, tensors);
+        Process(descriptors, tensors, averaged_tensor);
         radius += dDeltaRadius;
     }
-
-    for(int j=0;j<3;j++)
-    {
-        averaged_tensor.evec0[j] /= _scale;
-        averaged_tensor.evec1[j] /= _scale;
-        averaged_tensor.evec2[j] /= _scale;
-    }
-
-    // We swap the averaged_tensor and covarianceTensor
-    MeasureProbability(pointDescriptor, covarianceTensor, averaged_tensor);
-
-    return pointDescriptor;
 }
 
-TensorType CovarianceMatrixClassifier::GetCoVaraianceTensor(float radius)
-{
-    pcl::PointXYZ pointxyz = getSource();
-
-    _searchNeighbour->searchOption.searchParameter.radius = radius;
-    pcl::PointCloud<pcl::PointXYZ>::Ptr _neighbourCloud = _searchNeighbour->GetNeighbourCloud(pointxyz);
-
-    Eigen::Vector4f xyz_centroid;
-    pcl::compute3DCentroid(*_neighbourCloud, xyz_centroid);
-
-    Eigen::Matrix3f covariance_matrix;
-    pcl::computeCovarianceMatrix(*_neighbourCloud, xyz_centroid, covariance_matrix);
-
-    TensorType covarianceTensor;
-
-    covarianceTensor.evec0[0] = covariance_matrix(0, 0);
-    covarianceTensor.evec0[1] = covariance_matrix(0, 1);
-    covarianceTensor.evec0[2] = covariance_matrix(0, 2);
-
-    covarianceTensor.evec1[0] = covariance_matrix(1, 0);
-    covarianceTensor.evec1[1] = covariance_matrix(1, 1);
-    covarianceTensor.evec1[2] = covariance_matrix(1, 2);
-
-    covarianceTensor.evec2[0] = covariance_matrix(2, 0);
-    covarianceTensor.evec2[1] = covariance_matrix(2, 1);
-    covarianceTensor.evec2[2] = covariance_matrix(2, 2);
-
-    return covarianceTensor;
-}
-
-void CovarianceMatrixClassifier::MeasureProbability(
-                                                    PointDescriptor* pointDescriptor,
-                                                    TensorType& averaged_tensor,
-                                                    TensorType& covarianceTensor
-)
+void CovarianceMatrixClassifier::Process(std::vector<PointDescriptor*>& pointDescriptors, std::vector<TensorType>& tensors, std::vector<TensorType>& averaged_tensor)
 {
     char* pEnd;
     float _epsi = ::strtof(_config->GetValue("epsi").c_str(), &pEnd);
 
-    glyphVars glyph = EigenDecomposition(covarianceTensor);
-    computeSaliencyVals(glyph, averaged_tensor);
-    glyphAnalysis(glyph);
-
-    if(glyph.evals[2] == 0.0 && glyph.evals[1] == 0.0 && glyph.evals[0] == 0.0)
+    for (int i = 0; getCloud()->points.size(); i++)
     {
-         pointDescriptor->featNode.prob[0] = pointDescriptor->featNode.prob[0] + 1;
+        glyphVars glyph = EigenDecomposition(tensors[i]);
+        computeSaliencyVals(glyph, averaged_tensor[i]);
+        glyphAnalysis(glyph);
+
+        pointDescriptors[i]->glyph = glyph;
+
+        if(glyph.evals[2] == 0.0 && glyph.evals[1] == 0.0 && glyph.evals[0] == 0.0)
+        {
+            pointDescriptors[i]->featNode.prob[0] = pointDescriptors[i]->featNode.prob[0] + 1;
+        }
+        else
+        {
+            if(glyph.evals[2] >= _epsi * glyph.evals[0]) //ev0>ev1>ev2
+                pointDescriptors[i]->featNode.prob[0] = pointDescriptors[i]->featNode.prob[0] + 1;
+
+            if(glyph.evals[1] < _epsi * glyph.evals[0]) //ev0>ev1>ev2
+            pointDescriptors[i]->featNode.prob[1] = pointDescriptors[i]->featNode.prob[1] + 1;
+
+            if(glyph.evals[2] < _epsi * glyph.evals[0])  //ev0>ev1>ev2
+                pointDescriptors[i]->featNode.prob[2] = pointDescriptors[i]->featNode.prob[2] + 1;
+
+
+            pointDescriptors[i]->featNode.featStrength[0] += ((glyph.evals[2] * glyph.evals[1])/(glyph.evals[0] * glyph.evals[0]));
+            pointDescriptors[i]->featNode.featStrength[1] += ((glyph.evals[2] * (glyph.evals[0] - glyph.evals[1]))/(glyph.evals[0] * glyph.evals[1]));
+            pointDescriptors[i]->featNode.featStrength[2] +=  glyph.evals[2] /(glyph.evals[0] + glyph.evals[1] + glyph.evals[2]);
+        }
+
+        pointDescriptors[i]->featNode.csclcp[0] = glyph.csclcp[0];
+        pointDescriptors[i]->featNode.csclcp[1] = glyph.csclcp[1];
+        pointDescriptors[i]->featNode.csclcp[2] = glyph.csclcp[2];
+
+        pointDescriptors[i]->featNode.sum_eigen = glyph.evals[0] + glyph.evals[1] + glyph.evals[2];
+        if(glyph.evals[0] != 0)
+        {
+            pointDescriptors[i]->featNode.planarity = (glyph.evals[0] - glyph.evals[1]) / glyph.evals[0];
+            pointDescriptors[i]->featNode.anisotropy = (glyph.evals[1] - glyph.evals[2]) / glyph.evals[0];
+            pointDescriptors[i]->featNode.sphericity = (glyph.evals[0] - glyph.evals[2]) / glyph.evals[0];
+        }
+        else
+        {
+            pointDescriptors[i]->featNode.planarity = 0;
+            pointDescriptors[i]->featNode.anisotropy = 0;
+            pointDescriptors[i]->featNode.sphericity = 0;
+        }
+
+        if(glyph.evals[2] == 0.0 && glyph.evals[1] == 0.0 && glyph.evals[0] == 0.0)
+        {
+            pointDescriptors[i]->featNode.prob[0] = pointDescriptors[i]->featNode.prob[0] + 1;
+        }
+        else
+        {
+            if(glyph.evals[2] >= _epsi * glyph.evals[0]) //ev0>ev1>ev2
+                pointDescriptors[i]->featNode.prob[0] = pointDescriptors[i]->featNode.prob[0] + 1;
+
+            if(glyph.evals[1] < _epsi * glyph.evals[0]) //ev0>ev1>ev2
+            pointDescriptors[i]->featNode.prob[1] = pointDescriptors[i]->featNode.prob[1] + 1;
+
+            if(glyph.evals[2] < _epsi * glyph.evals[0])  //ev0>ev1>ev2
+                pointDescriptors[i]->featNode.prob[2] = pointDescriptors[i]->featNode.prob[2] + 1;
+
+            pointDescriptors[i]->featNode.featStrength[0] += ((glyph.evals[2] * glyph.evals[1])/(glyph.evals[0] * glyph.evals[0]));
+            pointDescriptors[i]->featNode.featStrength[1] += ((glyph.evals[2] * (glyph.evals[0] - glyph.evals[1]))/(glyph.evals[0] * glyph.evals[1]));
+            pointDescriptors[i]->featNode.featStrength[2] +=  glyph.evals[2] /(glyph.evals[0] + glyph.evals[1] + glyph.evals[2]);
+        }
+
+        pointDescriptors[i]->featNode.csclcp[0] = glyph.csclcp[0];
+        pointDescriptors[i]->featNode.csclcp[1] = glyph.csclcp[1];
+        pointDescriptors[i]->featNode.csclcp[2] = glyph.csclcp[2];
+
+        pointDescriptors[i]->featNode.sum_eigen = glyph.evals[0] + glyph.evals[1] + glyph.evals[2];
+        if(glyph.evals[0] != 0)
+        {
+            pointDescriptors[i]->featNode.planarity = (glyph.evals[0] - glyph.evals[1]) / glyph.evals[0];
+            pointDescriptors[i]->featNode.anisotropy = (glyph.evals[1] - glyph.evals[2]) / glyph.evals[0];
+            pointDescriptors[i]->featNode.sphericity = (glyph.evals[0] - glyph.evals[2]) / glyph.evals[0];
+        }
+        else
+        {
+            pointDescriptors[i]->featNode.planarity = 0;
+            pointDescriptors[i]->featNode.anisotropy = 0;
+            pointDescriptors[i]->featNode.sphericity = 0;
+        }
     }
-    else
+}
+
+void CovarianceMatrixClassifier::GetCoVaraianceTensor(float radius, std::vector<TensorType>& tensors)
+{
+    int index = -1;
+    _searchNeighbour->searchOption.searchParameter.radius = radius;
+
+    for(pcl::PointXYZ searchPoint : getCloud())
     {
-        if(glyph.evals[2] >= _epsi * glyph.evals[0]) //ev0>ev1>ev2
-            pointDescriptor->featNode.prob[0] = pointDescriptor->featNode.prob[0] + 1;
+        index++;
 
-        if(glyph.evals[1] < _epsi * glyph.evals[0]) //ev0>ev1>ev2
-           pointDescriptor->featNode.prob[1] = pointDescriptor->featNode.prob[1] + 1;
+        for(int j =0; j < 3; j++)
+        {
+            tensors[index].evec0[j] = 0;
+            tensors[index].evec1[j] = 0;
+            tensors[index].evec2[j] = 0;
+        }
 
-        if(glyph.evals[2] < _epsi * glyph.evals[0])  //ev0>ev1>ev2
-            pointDescriptor->featNode.prob[2] = pointDescriptor->featNode.prob[2] + 1;
+        _neighbourCloud = _searchNeighbour->GetNeighbourCloud(searchPoint);
+        
+        Eigen::Vector4f xyz_centroid;
+        pcl::compute3DCentroid(*_neighbourCloud, xyz_centroid);
 
+        Eigen::Matrix3f covariance_matrix;
+        pcl::computeCovarianceMatrix(*_neighbourCloud, xyz_centroid, covariance_matrix);
 
-        pointDescriptor->featNode.featStrength[0] += ((glyph.evals[2] * glyph.evals[1])/(glyph.evals[0] * glyph.evals[0]));
-        pointDescriptor->featNode.featStrength[1] += ((glyph.evals[2] * (glyph.evals[0] - glyph.evals[1]))/(glyph.evals[0] * glyph.evals[1]));
-        pointDescriptor->featNode.featStrength[2] +=  glyph.evals[2] /(glyph.evals[0] + glyph.evals[1] + glyph.evals[2]);
-    }
+        tensors[index].evec0[0] = covariance_matrix(0, 0);
+        tensors[index].evec0[1] = covariance_matrix(0, 1);
+        tensors[index].evec0[2] = covariance_matrix(0, 2);
 
-    pointDescriptor->featNode.csclcp[0] = glyph.csclcp[0];
-    pointDescriptor->featNode.csclcp[1] = glyph.csclcp[1];
-    pointDescriptor->featNode.csclcp[2] = glyph.csclcp[2];
+        tensors[index].evec1[0] = covariance_matrix(1, 0);
+        tensors[index].evec1[1] = covariance_matrix(1, 1);
+        tensors[index].evec1[2] = covariance_matrix(1, 2);
 
-    pointDescriptor->featNode.sum_eigen = glyph.evals[0] + glyph.evals[1] + glyph.evals[2];
-    if(glyph.evals[0] != 0)
-    {
-        pointDescriptor->featNode.planarity = (glyph.evals[0] - glyph.evals[1]) / glyph.evals[0];
-        pointDescriptor->featNode.anisotropy = (glyph.evals[1] - glyph.evals[2]) / glyph.evals[0];
-        pointDescriptor->featNode.sphericity = (glyph.evals[0] - glyph.evals[2]) / glyph.evals[0];
-    }
-    else
-    {
-        pointDescriptor->featNode.planarity = 0;
-        pointDescriptor->featNode.anisotropy = 0;
-        pointDescriptor->featNode.sphericity = 0;
-    }
-
-    if(glyph.evals[2] == 0.0 && glyph.evals[1] == 0.0 && glyph.evals[0] == 0.0)
-    {
-         pointDescriptor->featNode.prob[0] = pointDescriptor->featNode.prob[0] + 1;
-    }
-    else
-    {
-        if(glyph.evals[2] >= _epsi * glyph.evals[0]) //ev0>ev1>ev2
-            pointDescriptor->featNode.prob[0] = pointDescriptor->featNode.prob[0] + 1;
-
-        if(glyph.evals[1] < _epsi * glyph.evals[0]) //ev0>ev1>ev2
-           pointDescriptor->featNode.prob[1] = pointDescriptor->featNode.prob[1] + 1;
-
-        if(glyph.evals[2] < _epsi * glyph.evals[0])  //ev0>ev1>ev2
-            pointDescriptor->featNode.prob[2] = pointDescriptor->featNode.prob[2] + 1;
-
-        pointDescriptor->featNode.featStrength[0] += ((glyph.evals[2] * glyph.evals[1])/(glyph.evals[0] * glyph.evals[0]));
-        pointDescriptor->featNode.featStrength[1] += ((glyph.evals[2] * (glyph.evals[0] - glyph.evals[1]))/(glyph.evals[0] * glyph.evals[1]));
-        pointDescriptor->featNode.featStrength[2] +=  glyph.evals[2] /(glyph.evals[0] + glyph.evals[1] + glyph.evals[2]);
-    }
-
-    pointDescriptor->featNode.csclcp[0] = glyph.csclcp[0];
-    pointDescriptor->featNode.csclcp[1] = glyph.csclcp[1];
-    pointDescriptor->featNode.csclcp[2] = glyph.csclcp[2];
-
-    pointDescriptor->featNode.sum_eigen = glyph.evals[0] + glyph.evals[1] + glyph.evals[2];
-    if(glyph.evals[0] != 0)
-    {
-        pointDescriptor->featNode.planarity = (glyph.evals[0] - glyph.evals[1]) / glyph.evals[0];
-        pointDescriptor->featNode.anisotropy = (glyph.evals[1] - glyph.evals[2]) / glyph.evals[0];
-        pointDescriptor->featNode.sphericity = (glyph.evals[0] - glyph.evals[2]) / glyph.evals[0];
-    }
-    else
-    {
-        pointDescriptor->featNode.planarity = 0;
-        pointDescriptor->featNode.anisotropy = 0;
-        pointDescriptor->featNode.sphericity = 0;
+        tensors[index].evec2[0] = covariance_matrix(2, 0);
+        tensors[index].evec2[1] = covariance_matrix(2, 1);
+        tensors[index].evec2[2] = covariance_matrix(2, 2);
     }
 }
 

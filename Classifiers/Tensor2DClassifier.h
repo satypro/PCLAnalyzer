@@ -15,6 +15,12 @@ public:
     }
 private:
     Configuration* _config;
+    void CalculatePartialDerivative(float radius, std::vector<Derivatives>& derivatives);
+    void Tensor2D(float radius, std::vector<TensorType>& tensor2Ds);
+    glyphVars EigenDecomposition(TensorType tensor);
+    void ComputeSaliencyVals(glyphVars& glyph, TensorType& averaged_tensor);
+    void glyphAnalysis(glyphVars& glyph);
+    void Process(std::vector<PointDescriptor*>& pointDescriptors, std::vector<TensorType>& tensors, std::vector<TensorType>& averaged_tensor)
 };
 
 #endif // TENSOR2DCLASSIFIER_H
