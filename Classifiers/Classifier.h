@@ -23,8 +23,8 @@ private:
 
     bool MakeVector(pcl::PointXYZ source, pcl::PointXYZ neighbour, Eigen::Matrix<double, 3, 1>* V);
     TensorType Compute3DBallVote(Eigen::Matrix<double, 3, 1> V, float *weight);
-    glyphVars EigenDecomposition(TensorType tensor);
     void getdiffusionvelocity(Eigen::Vector3f evals, metaVelData *diffVel);
+    glyphVars EigenDecomposition(TensorType tensor);
     void computeSaliencyVals(glyphVars& glyph);
     void glyphAnalysis(glyphVars& glyph);
     IPointDescriptor* Process();

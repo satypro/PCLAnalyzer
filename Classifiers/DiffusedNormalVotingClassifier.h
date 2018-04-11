@@ -17,11 +17,15 @@ public:
 private:
     Configuration* _config;
     SearchNeighbourBase* _searchNeighbour;
-    IPointDescriptor* Process();
-    TensorType GetCoVaraianceTensor(float radius);
-    void MeasureProbability(PointDescriptor* pointDescriptor, TensorType& averaged_tensor, TensorType& covarianceTensor);
+    pcl::PointCloud<pcl::PointXYZ>::Ptr _neighbourCloud;
+
+    void Process(std::vector<PointDescriptor*>& pointDescriptors, std::vector<TensorType>& tensors);
+    void GetTensor(float radius, std::vector<TensorType>& tensors);
+    TensorType Compute3DBallVote(Eigen::Matrix<double, 3, 1> V, float *weight);
+    bool MakeVector(pcl::PointXYZ source, pcl::PointXYZ neighbour, Eigen::Matrix<double, 3, 1>* V);
     glyphVars EigenDecomposition(TensorType tensor);
-    void computeSaliencyVals(glyphVars& glyph, TensorType& averaged_tensor);
+    void getdiffusionvelocity(Eigen::Vector3f evals, metaVelData *diffVel);
+    void computeSaliencyVals(glyphVars& glyph);
     void glyphAnalysis(glyphVars& glyph);
 };
 
