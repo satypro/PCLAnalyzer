@@ -16,6 +16,7 @@ class ViewModel : public IViewModel
 public:
     CloudType cloud;
     std::vector<PointDescriptor*> descriptor;
+    std::vector<gnode> graph;
 };
 
 #endif // VIEWMODEL_H

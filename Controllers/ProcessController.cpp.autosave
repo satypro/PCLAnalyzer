@@ -79,7 +79,11 @@ IViewModel* ProcessController::Process(std::map<std::string, std::string> reques
     model->cloud = cloud;
     model->descriptor = classifier->Classify();
 
-    Util
+    Util * util = new Util();
+    util->_inCloud = cloud;
+    util->SetSearchStrategy(search);
+    util->ComputeDoNs_MSO();
+    
 
 
     StructFeatClassification(model);

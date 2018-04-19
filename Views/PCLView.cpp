@@ -14,7 +14,7 @@ void PCLView::SetViewModel(IViewModel* model)
 void PCLView::Show()
 {
     glBegin(GL_POINTS);
-    /*for (size_t i = 0; i < this->model->cloud->points.size (); ++i)
+    for (size_t i = 0; i < this->model->cloud->points.size (); ++i)
     {
         if (isnan(this->model->cloud->points[i].x) || isnan(this->model->cloud->points[i].y) || isnan(this->model->cloud->points[i].z))
         {
@@ -46,8 +46,8 @@ void PCLView::Show()
                    this->model->cloud->points[i].y,
                    this->model->cloud->points[i].z);
     }
-    */
 
+    /*
     for (size_t i = 0; i < this->model->cloud->points.size (); i++)
     {
         // To Get the original descriptor
@@ -69,6 +69,7 @@ void PCLView::Show()
         glVertex3f(this->model->cloud->points[i].x,
                    this->model->cloud->points[i].y,
                    this->model->cloud->points[i].z);
-    }
+    }*/
     glEnd();
+
 }

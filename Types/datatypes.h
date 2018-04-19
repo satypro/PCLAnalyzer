@@ -181,4 +181,6 @@ struct myfloat3
     float z;
 };
 
+typedef int idxType;
+
 #endif // DATATYPES_H

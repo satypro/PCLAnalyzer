@@ -44,7 +44,9 @@ SOURCES += main.cpp\
     Classifiers/BoundaryTensorClassifier.cpp \
     UI/Component/DoubleSlider.cpp \
     UI/Component/StructureParameterWidget.cpp \
-    UI/Widgets/ParameterWidget.cpp
+    UI/Widgets/ParameterWidget.cpp \
+    Utilities/Graph.cpp \
+    Utilities/Util.cpp
 
 HEADERS  += pclanalyzerwindow.h \
     Neighbours/SearchNeighbourOctTree.h \
@@ -84,7 +86,9 @@ HEADERS  += pclanalyzerwindow.h \
     Classifiers/BoundaryTensorClassifier.h \
     UI/Component/DoubleSlider.h \
     UI/Component/StructureParameterWidget.h \
-    UI/Widgets/ParameterWidget.h
+    UI/Widgets/ParameterWidget.h \
+    Utilities/Graph.h \
+    Utilities/Util.h
 
 FORMS    += pclanalyzerwindow.ui \
     mainwindow.ui
