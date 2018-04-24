@@ -17,6 +17,7 @@ public:
     CloudType cloud;
     std::vector<PointDescriptor*> descriptor;
     std::vector<gnode> graph;
+    std::vector <unsigned int> PtsProp;
 };
 
 #endif // VIEWMODEL_H

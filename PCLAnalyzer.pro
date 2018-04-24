@@ -46,7 +46,8 @@ SOURCES += main.cpp\
     UI/Component/StructureParameterWidget.cpp \
     UI/Widgets/ParameterWidget.cpp \
     Utilities/Graph.cpp \
-    Utilities/Util.cpp
+    Utilities/Util.cpp \
+    Views/Color.cpp
 
 HEADERS  += pclanalyzerwindow.h \
     Neighbours/SearchNeighbourOctTree.h \
@@ -88,7 +89,8 @@ HEADERS  += pclanalyzerwindow.h \
     UI/Component/StructureParameterWidget.h \
     UI/Widgets/ParameterWidget.h \
     Utilities/Graph.h \
-    Utilities/Util.h
+    Utilities/Util.h \
+    Views/Color.h
 
 FORMS    += pclanalyzerwindow.ui \
     mainwindow.ui

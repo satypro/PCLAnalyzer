@@ -79,7 +79,11 @@ IViewModel* ProcessController::Process(std::map<std::string, std::string> reques
     model->cloud = cloud;
     model->descriptor = classifier->Classify();
 
-    Util
+    Util * util = new Util();
+    util->_inCloud = cloud;
+    util->SetSearchStrategy(search);
+    util->ComputeDoNs_MSO();
+    
 
 
     StructFeatClassification(model);
@@ -225,10 +229,10 @@ void ProcessController::StructFeatClassification(ViewModel* model)
              else
                   _ftPtsProp[i] = 0;
 
-
-             pointDescriptor->PtsProp = _ftPtsProp;
-
+             //pointDescriptor->PtsProp = _ftPtsProp;
          }
+
+         model->PtsProp = _ftPtsProp;
 
          std::cout<<"number of line-type features "<<l_c<<std::endl;
          std::cout<<"number of  critical features "<<l_s<<std::endl;
