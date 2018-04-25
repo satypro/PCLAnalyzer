@@ -346,11 +346,11 @@ void PCLView :: writeTostl()
     int tNdx = 0;
     for (size_t i = 0; i <_inCloud->points.size(); i++)
     {
-        for (size_t j = 0; j <this->model->descriptor.at(i)->featNode.triangles.size(); j++)
+        for (size_t j = 0; j <this->model->descriptor[i]->featNode.triangles.size(); j++)
         {
-            myfile << tNdx <<" " << this->model->descriptor.at(i)->featNode.triangles[j].pid
-                   << " " << this->model->descriptor.at(i)->featNode.triangles[j].qid
-                   << " " << this->model->descriptor.at(i)->featNode.triangles[j].rid
+            myfile << tNdx <<" " << this->model->descriptor[i]->featNode.triangles[j].pid
+                   << " " << this->model->descriptor[i]->featNode.triangles[j].qid
+                   << " " << this->model->descriptor[i]->featNode.triangles[j].rid
                    << std::endl;
             tNdx++;
         }
@@ -364,9 +364,9 @@ void PCLView::idxPtCloudFeat()
 
     for (size_t i = 0; i <_inCloud->points.size(); i++)
     {
-        glColor3f(this->model->descriptor.at(i)->featNode.prob[1],
-                this->model->descriptor.at(i)->featNode.prob[2],
-                this->model->descriptor.at(i)->featNode.prob[0]);
+        glColor3f(this->model->descriptor[i]->featNode.prob[1],
+                this->model->descriptor[i]->featNode.prob[2],
+                this->model->descriptor[i]->featNode.prob[0]);
         glVertex3f(_inCloud->points[i].x,
                    _inCloud->points[i].y,
                    _inCloud->points[i].z);
@@ -383,7 +383,7 @@ void PCLView::renderCurvature()
 
     for(size_t i = 0; i <_inCloud->points.size(); i++)
     {
-            currentcolor = currentcolor.findColor(model->descriptor[i]->featNode.featStrength[2], 0.0, 1.0) ;
+            currentcolor = currentcolor.findColor(this->model->descriptor[i]->featNode.featStrength[2], 0.0, 1.0) ;
             glColor3d(currentcolor.red(), currentcolor.green(), currentcolor.blue()) ;
             glVertex3f(_inCloud->points[i].x, _inCloud->points[i].y, _inCloud->points[i].z);
     }
@@ -400,9 +400,9 @@ void PCLView :: csclcpDisplay()
     for (size_t i = 0; i <_inCloud->points.size(); i++)
     {
         float cl,cs,cp;
-        cs = model->descriptor[i]->featNode.csclcp[2];
-        cl = model->descriptor[i]->featNode.csclcp[1];
-        cp = model->descriptor[i]->featNode.csclcp[0];
+        cs = this->model->descriptor[i]->featNode.csclcp[2];
+        cl = this->model->descriptor[i]->featNode.csclcp[1];
+        cp = this->model->descriptor[i]->featNode.csclcp[0];
         glColor3f(cl, cs, cp);
         glVertex3f(_inCloud->points[i].x, _inCloud->points[i].y, _inCloud->points[i].z);
     }
@@ -410,7 +410,6 @@ void PCLView :: csclcpDisplay()
     glEnd();
     return;
 }
-
 
 void PCLView :: sumeigen_Display()
 {
@@ -420,16 +419,16 @@ void PCLView :: sumeigen_Display()
     float min = 10000.0;
     for(size_t i = 0; i <_inCloud->points.size(); i++)
     {
-        if(model->descriptor[i]->featNode.sum_eigen > max && model->descriptor[i]->featNode.sum_eigen!=-1)
-            max = model->descriptor[i]->featNode.sum_eigen;
-        if(model->descriptor[i]->featNode.sum_eigen < min && model->descriptor[i]->featNode.sum_eigen!=-1)
-            min = model->descriptor[i]->featNode.sum_eigen;
+        if(this->model->descriptor[i]->featNode.sum_eigen > max && this->model->descriptor[i]->featNode.sum_eigen!=-1)
+            max = this->model->descriptor[i]->featNode.sum_eigen;
+        if(this->model->descriptor[i]->featNode.sum_eigen < min && this->model->descriptor[i]->featNode.sum_eigen!=-1)
+            min = this->model->descriptor[i]->featNode.sum_eigen;
     }
 
     for(size_t i = 0; i <_inCloud->points.size(); i++)
     {
-        float val = (model->descriptor[i]->featNode.sum_eigen - min) / (max - min);
-        if(model->descriptor[i]->featNode.sum_eigen==-1)
+        float val = (this->model->descriptor[i]->featNode.sum_eigen - min) / (max - min);
+        if(this->model->descriptor[i]->featNode.sum_eigen==-1)
             glColor3f(0.0, 1.0, 0.0) ;
         else
             glColor3f(val, 0.0, val) ;
@@ -451,14 +450,14 @@ void PCLView :: planarityDisplay()
     for(size_t i = 0; i <_inCloud->points.size(); i++)
     {
         if(this->model->descriptor[i]->featNode.planarity > max)
-            max = model->descriptor[i]->featNode.planarity;
+            max = this->model->descriptor[i]->featNode.planarity;
         if(model->descriptor[i]->featNode.planarity < min)
-            min = model->descriptor[i]->featNode.planarity;
+            min = this->model->descriptor[i]->featNode.planarity;
     }
 
     for(size_t i = 0; i <_inCloud->points.size(); i++)
     {
-        float val = model->descriptor[i]->featNode.csclcp[1];
+        float val = this->model->descriptor[i]->featNode.csclcp[1];
             if(val==-1)
                 glColor3d(0.0, 1.0, 0.0) ;
             else
@@ -481,15 +480,15 @@ void PCLView :: donDisplay()
     float min = 10000.0;
     for(size_t i = 0; i <_inCloud->points.size(); i++)
     {
-        if(model->descriptor[i]->featNode.don > max)
-            max = model->descriptor[i]->featNode.don;
-        if(model->descriptor[i]->featNode.don < min)
-            min = model->descriptor[i]->featNode.don;
+        if(this->model->descriptor[i]->featNode.don > max)
+            max = this->model->descriptor[i]->featNode.don;
+        if(this->model->descriptor[i]->featNode.don < min)
+            min = this->model->descriptor[i]->featNode.don;
     }
 
     for(size_t i = 0; i <_inCloud->points.size(); i++)
     {
-        float val = (model->descriptor[i]->featNode.don - min)/(max - min);
+        float val = (this->model->descriptor[i]->featNode.don - min)/(max - min);
         if(val==-1)
             glColor3f(0.0, 1.0, 0.0);
         else
@@ -602,28 +601,46 @@ void PCLView :: lineWireframe()
 
     for (size_t i = 0; i <_inCloud->points.size(); i++)
     {
-        if(this->model->descriptor[i]->featNode.label==5){
-        for (size_t j = 0; j <_probval[i].triangles.size(); j++)
+        if(this->model->descriptor[i]->featNode.label==5)
         {
-            if(_probval[_probval[i].triangles[j].pid].csclcp[1] > _probval[_probval[i].triangles[j].pid].csclcp[0] && _probval[_probval[i].triangles[j].pid].csclcp[1] > _probval[_probval[i].triangles[j].pid].csclcp[2])
-                glColor3f(_probval[_probval[i].triangles[j].pid].csclcp[1],0,0);
-            else
-                glColor3f(_probval[_probval[i].triangles[j].pid].csclcp[1], _probval[_probval[i].triangles[j].pid].csclcp[2], _probval[_probval[i].triangles[j].pid].csclcp[0]);
-            glVertex3f(_probval[i].triangles[j].p[0],_probval[i].triangles[j].p[1],_probval[i].triangles[j].p[2]);
+            for (size_t j = 0; j <this->model->descriptor[i]->featNode.triangles.size(); j++)
+            {
+                if(this->model->descriptor[this->model->descriptor[i]->featNode.triangles[j].pid]->featNode.csclcp[1] > this->model->descriptor[this->model->descriptor[i]->featNode.triangles[j].pid]->featNode.csclcp[0] 
+                    && this->model->descriptor[this->model->descriptor[i]->featNode.triangles[j].pid]->featNode.csclcp[1] > this->model->descriptor[this->model->descriptor[i]->featNode.triangles[j].pid]->featNode.csclcp[2])
+                    glColor3f(this->model->descriptor[this->model->descriptor[i]->featNode.triangles[j].pid]->featNode.csclcp[1],0,0);
+                else
+                    glColor3f(this->model->descriptor[this->model->descriptor[i]->featNode.triangles[j].pid]->featNode.csclcp[1], 
+                    this->model->descriptor[this->model->descriptor[i]->featNode.triangles[j].pid]->featNode.csclcp[2], 
+                    this->model->descriptor[this->model->descriptor[i]->featNode.triangles[j].pid]->featNode.csclcp[0]);
 
-            if(_probval[_probval[i].triangles[j].qid].csclcp[1] > _probval[_probval[i].triangles[j].qid].csclcp[0] && _probval[_probval[i].triangles[j].qid].csclcp[1] > _probval[_probval[i].triangles[j].qid].csclcp[2])
-                glColor3f(_probval[_probval[i].triangles[j].qid].csclcp[1],0,0);
-            else
-                glColor3f(_probval[_probval[i].triangles[j].qid].csclcp[1], _probval[_probval[i].triangles[j].qid].csclcp[2], _probval[_probval[i].triangles[j].qid].csclcp[0]);
+                glVertex3f(this->model->descriptor[i]->featNode.triangles[j].p[0],
+                this->model->descriptor[i]->featNode.triangles[j].p[1],
+                this->model->descriptor[i]->featNode.triangles[j].p[2]);
 
-            glVertex3f(_probval[i].triangles[j].q[0],_probval[i].triangles[j].q[1],_probval[i].triangles[j].q[2]);
+                if(this->model->descriptor[this->model->descriptor[i]->featNode.triangles[j].qid]->featNode.csclcp[1] > this->model->descriptor[this->model->descriptor[i]->featNode.triangles[j].qid]->featNode.csclcp[0] 
+                    && this->model->descriptor[this->model->descriptor[i]->featNode.triangles[j].qid]->featNode.csclcp[1] > this->model->descriptor[this->model->descriptor[i]->featNode.triangles[j].qid]->featNode.csclcp[2])
+                    glColor3f(this->model->descriptor[this->model->descriptor[i]->featNode.triangles[j].qid].csclcp[1],0,0);
+                else
+                    glColor3f(this->model->descriptor[this->model->descriptor[i]->featNode.triangles[j].qid]->featNode.csclcp[1], 
+                    this->model->descriptor[this->model->descriptor[i]->featNode.triangles[j].qid]->featNode.csclcp[2], 
+                    this->model->descriptor[this->model->descriptor[i]->featNode.triangles[j].qid]->featNode.csclcp[0]);
 
-            if(_probval[_probval[i].triangles[j].rid].csclcp[1] > _probval[_probval[i].triangles[j].rid].csclcp[0] && _probval[_probval[i].triangles[j].rid].csclcp[1] > _probval[_probval[i].triangles[j].rid].csclcp[2])
-                glColor3f(_probval[_probval[i].triangles[j].rid].csclcp[1],0,0);
-            else
-                glColor3f(_probval[_probval[i].triangles[j].rid].csclcp[1], _probval[_probval[i].triangles[j].rid].csclcp[2], _probval[_probval[i].triangles[j].rid].csclcp[0]);
-            glVertex3f(_probval[i].triangles[j].r[0],_probval[i].triangles[j].r[1],_probval[i].triangles[j].r[2]);
-        }
+                glVertex3f(this->model->descriptor[i]->featNode.triangles[j].q[0],
+                    this->model->descriptor[i]->featNode.triangles[j].q[1],
+                    this->model->descriptor[i]->featNode.triangles[j].q[2]);
+
+                if(this->model->descriptor[this->model->descriptor[i]->featNode.triangles[j].rid]->featNode.csclcp[1] > this->model->descriptor[this->model->descriptor[i]->featNode.triangles[j].rid]->featNode.csclcp[0] 
+                    && this->model->descriptor[this->model->descriptor[i]->featNode.triangles[j].rid]->featNode.csclcp[1] > this->model->descriptor[this->model->descriptor[i]->featNode.triangles[j].rid]->featNode.csclcp[2])
+                    glColor3f(this->model->descriptor[this->model->descriptor[i]->featNode.triangles[j].rid].csclcp[1],0,0);
+                else
+                    glColor3f(this->model->descriptor[this->model->descriptor[i]->featNode.triangles[j].rid]->featNode.csclcp[1], 
+                    this->model->descriptor[this->model->descriptor[i]->featNode.triangles[j].rid]->featNode.csclcp[2],
+                    this->model->descriptor[this->model->descriptor[i]->featNode.triangles[j].rid]->featNode.csclcp[0]);
+
+                glVertex3f(this->model->descriptor[i]->featNode.triangles[j].r[0],
+                this->model->descriptor[i]->featNode.triangles[j].r[1],
+                this->model->descriptor[i]->featNode.triangles[j].r[2]);
+            }
         }
     }
 
@@ -638,7 +655,7 @@ void PCLView :: contours()
         {
             double temp = _intensity[i];
             glColor3d(temp, temp, temp) ;
-            if(this->model->descriptor[i].label == 5)
+            if(this->model->descriptor[i]->featNode.label == 5)
                 glVertex3f(_inCloud->points[i].x, _inCloud->points[i].y, _inCloud->points[i].z);
         }
     glEnd();
@@ -653,12 +670,21 @@ void PCLView :: contours()
 
     for (size_t i = 0; i <_inCloud->points.size(); i++)
     {
-        for (size_t j = 0; j <_probval[i].triangles.size(); j++)
+        for (size_t j = 0; j <this->model->descriptor[i]->featNode.triangles.size(); j++)
         {
-            if(_probval[i].triangles[j].hasCL &&  (_probval[_probval[i].triangles[j].pid].label == 5 || _probval[_probval[i].triangles[j].qid].label == 5  || _probval[_probval[i].triangles[j].rid].label == 5) )
+            if(this->model->descriptor[i]->featNode.triangles[j].hasCL 
+            &&  (this->model->descriptor[this->model->descriptor[i]->featNode.triangles[j].pid]->featNode.label == 5 
+                || this->model->descriptor[this->model->descriptor[i]->featNode.triangles[j].qid]->featNode.label == 5  
+                || this->model->descriptor[this->model->descriptor[i]->featNode.triangles[j].rid]->featNode.label == 5) 
+            )
             {
-                glVertex3f(_probval[i].triangles[j].CL_p1[0],_probval[i].triangles[j].CL_p1[1],_probval[i].triangles[j].CL_p1[2]);
-                glVertex3f(_probval[i].triangles[j].CL_p2[0],_probval[i].triangles[j].CL_p2[1],_probval[i].triangles[j].CL_p2[2]);
+                glVertex3f(this->model->descriptor[i]->featNode.triangles[j].CL_p1[0],
+                    this->model->descriptor[i]->featNode.triangles[j].CL_p1[1],
+                    this->model->descriptor[i]->featNode.triangles[j].CL_p1[2]);
+
+                glVertex3f(this->model->descriptor[i]->featNode.triangles[j].CL_p2[0],
+                    this->model->descriptor[i]->featNode.triangles[j].CL_p2[1],
+                    this->model->descriptor[i]->featNode.triangles[j].CL_p2[2]);
             }
         }
     }
@@ -676,15 +702,15 @@ void PCLView :: eigenentropyDisplay()
         float min = 10000.0;
         for(size_t i = 0; i <_inCloud->points.size(); i++)
         {
-            if(this->model->descriptor[i].eigenentropy > max)
-                max =this->model->descriptor[i].eigenentropy;
-            if(this->model->descriptor[i].eigenentropy < min)
-                min = this->model->descriptor[i].eigenentropy;
+            if(this->model->descriptor[i]->featNode.eigenentropy > max)
+                max =this->model->descriptor[i]->featNode.eigenentropy;
+            if(this->model->descriptor[i]->featNode.eigenentropy < min)
+                min = this->model->descriptor[i]->featNode.eigenentropy;
         }
 
         for(size_t i = 0; i <_inCloud->points.size(); i++)
         {
-            float val = (this->model->descriptor[i].eigenentropy - min) / (max - min);
+            float val = (this->model->descriptor[i]->featNode.eigenentropy - min) / (max - min);
             glColor3f(val, 0.0, val) ;
 
             if(val>=scalarMin && val<=scalarMax)
@@ -828,12 +854,12 @@ void PCLView :: tensorLines()
             glPointSize(1.0);
             glBegin(GL_POINTS);
             for(size_t i = 0; i <_inCloud->points.size(); i++)
-                {
-                    double temp = _intensity[i];
-                    glColor3d(temp, temp, temp) ;
-                    if(this->model->descriptor[i].label == 5)
-                        glVertex3f(_inCloud->points[i].x, _inCloud->points[i].y, _inCloud->points[i].z);
-                }
+            {
+                double temp = _intensity[i];
+                glColor3d(temp, temp, temp) ;
+                if(this->model->descriptor[i]->featNode.label == 5)
+                    glVertex3f(_inCloud->points[i].x, _inCloud->points[i].y, _inCloud->points[i].z);
+            }
             glEnd();
 
             glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
