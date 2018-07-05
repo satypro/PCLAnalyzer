@@ -15,6 +15,7 @@
 #include "UI/Component/StructureParameterWidget.h"
 #include "UI/Widgets/ParameterWidget.h"
 #include "boost/lexical_cast.hpp"
+#include "Views/PCLView.h"
 
 PCLAnalyzerWindow::PCLAnalyzerWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -118,6 +119,8 @@ PCLAnalyzerWindow::PCLAnalyzerWindow(QWidget *parent) :
     ftdisp2->addItem("Eigenentropy");
     ftdisp2->addItem("Labels");
 
+    connect(ftdisp2, SIGNAL (currentIndexChanged(int)), this, SLOT (SetMeatFeatDispMode(int)));
+
     QHBoxLayout* processCloudLayout = new QHBoxLayout;
     processCloudLayout->addWidget(ftdisp2);
     processCloudLayout->addWidget(btnReadCloud);
@@ -149,7 +152,19 @@ void PCLAnalyzerWindow::display()
 {
     if (displayCloud)
     {
-        _view->Show();
+       // _view->Show();
+        PCLView * pclView = static_cast<PCLView*>(_view);
+        if(_displaymode == 0 || (_displaymode == 1 && _pointmode == 0))
+        {
+               pclView->lasDisplay();
+        }
+        else if(_displaymode == 1 && _pointmode == 4)
+        {
+            pclView->displayGraph();
+            pclView->displayBoundary();
+        }
+        else if(_displaymode == 1)
+            pclView->renderStructFDs(_pointmode);
     }
 }
 
@@ -275,4 +290,20 @@ std::map<std::string, std::string>& PCLAnalyzerWindow::PrepareRequest()
     request["classifierType"] = boost::lexical_cast<std::string>(this->classifierType);
 
     return request;
+}
+
+void PCLAnalyzerWindow::SetDisplayMode(int displaymode, int pointmode)
+{
+    this->_displaymode = displaymode;
+    this->_pointmode = pointmode;
+}
+
+void PCLAnalyzerWindow :: SetMeatFeatDispMode(int pointMode)
+{
+    this->_displaymode = 1;
+    this->_pointmode = pointMode;
+
+    glWidget->setDisplayMode(1);
+    glWidget->setPointMode(pointMode);
+    glWidget->updateGL();
 }

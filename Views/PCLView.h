@@ -32,6 +32,7 @@ public:
     bool renderStructFDs(int pointMode);
     void displayBoundary();
     void smoothTensorLines(std::string filename);
+    void displayGraph();
     float scalarMin, scalarMax;
 
 private:
@@ -60,6 +61,7 @@ private:
     std::vector <Line> _smoothTensorLinesCorrected;
     std::vector <float> errorTL;
     std::vector <float> errorCTL;
+    std::vector <float> _intensity;
 };
 
 #endif // PCLVIEW_H

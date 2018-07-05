@@ -21,7 +21,8 @@ private:
     ClassifiersBase* GetClassifier(std::string classifierSelected, std::map<std::string, std::string> request);
     SearchNeighbourBase* GetNeighbourSearchStrategy(SearchOption option);
     void StructFeatClassification(ViewModel* model);
-    void CurveGraphExtraction(ViewModel* model);
+    void CurveGraphExtraction(ViewModel* model, std::map<std::string, std::string> request);
+    std::vector <int> labels;
 };
 
 #endif // PROCESSCONTROLLER_H

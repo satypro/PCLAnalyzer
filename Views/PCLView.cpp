@@ -18,6 +18,7 @@ void PCLView::SetViewModel(IViewModel* model)
 {
     this->model = static_cast<ViewModel*>(model);
     _inCloud = this->model->cloud;
+    _intensity = this->model->intensity;
 }
 
 void PCLView::Show()
@@ -36,10 +37,10 @@ void PCLView::Show()
 
         glColor3f(0, 0, 0);
 
-        if (descriptor->label == Point)
-        {
+        //if (descriptor->label == Point)
+        //{
             //glColor3f(255, 0, 0);
-        }
+        //}
 
         if (descriptor->label  == Curve)
         {
@@ -188,7 +189,7 @@ void PCLView :: displayBoundary()
     glEnd() ;
 }
 
-void PCLView :: smoothTensorLines()
+void PCLView :: smoothTensorLines(std::string filename)
 {
     std::ifstream tensorlinesFile;
     tensorlinesFile.open(filename.c_str());
@@ -219,7 +220,7 @@ void PCLView :: smoothTensorLines()
 
     tensorlinesFile.close();
 
-    std::cout << "Building no = " << buildingNo << endl;
+    std::cout << "Building no = " << buildingNo << std::endl;
 
     Point a0,a1,b0,b1,c0,c1,d0,d1,e0,e1,f0,f1,g0,g1;
     for(int i=0;i<tls.size();i++)
@@ -239,13 +240,14 @@ void PCLView :: smoothTensorLines()
                 error += squared_distance(tls[i][k],line);
             }
             errorTL.push_back(error);
-              cout << error << endl;
+              std::cout << error << std::endl;
 
             Point p = line.projection(tls[i][0]);
             Point q = line.projection(tls[i][1]);
-              Point p = tls[i][0];
-              Point q = tls[i][tls[i].size()-1];
-              cout << p << " -------------- " << q << endl;
+            p = tls[i][0];
+            q = tls[i][tls[i].size()-1];
+
+            std::cout << p << " -------------- " << q << std::endl;
             Line temp;
             temp.p[0] = p.x(); temp.p[1] = p.y(); temp.p[2] = p.z();
             temp.q[0] = q.x(); temp.q[1] = q.y(); temp.q[2] = q.z();
@@ -332,7 +334,7 @@ void PCLView :: smoothTensorLines()
             for(int k=0;k<tls[i].size();k++) {
                 error += squared_distance(tls[i][k],line);
             }
-            cout << error << endl;
+            std::cout << error << std::endl;
         }
     }
 
@@ -574,23 +576,6 @@ void PCLView :: drawLineFatures()
         return;
 }
 
-void PCLView ::drawSpectrum(void)
-{
-    Color currentcolor ;
-    glBegin(GL_QUAD_STRIP) ;
-
-    for (int i = -3 ; i <= 4 ; i++)
-    {
-        double k = i + 3;
-        currentcolor = currentcolor.findColor(k/7.0, 0.0, 1.0) ;
-        glColor3d(currentcolor.red(), currentcolor.green(), currentcolor.blue()) ;
-        glVertex3d(1.70, (double)i/4.0, 0.0) ;
-        glVertex3d(1.80, (double)i/4.0, 0.0) ;
-    }
-
-    glEnd() ;
-}
-
 void PCLView :: lineWireframe()
 {
     glEnable(GL_LINE_SMOOTH);
@@ -619,7 +604,7 @@ void PCLView :: lineWireframe()
 
                 if(this->model->descriptor[this->model->descriptor[i]->featNode.triangles[j].qid]->featNode.csclcp[1] > this->model->descriptor[this->model->descriptor[i]->featNode.triangles[j].qid]->featNode.csclcp[0] 
                     && this->model->descriptor[this->model->descriptor[i]->featNode.triangles[j].qid]->featNode.csclcp[1] > this->model->descriptor[this->model->descriptor[i]->featNode.triangles[j].qid]->featNode.csclcp[2])
-                    glColor3f(this->model->descriptor[this->model->descriptor[i]->featNode.triangles[j].qid].csclcp[1],0,0);
+                    glColor3f(this->model->descriptor[this->model->descriptor[i]->featNode.triangles[j].qid]->featNode.csclcp[1],0,0);
                 else
                     glColor3f(this->model->descriptor[this->model->descriptor[i]->featNode.triangles[j].qid]->featNode.csclcp[1], 
                     this->model->descriptor[this->model->descriptor[i]->featNode.triangles[j].qid]->featNode.csclcp[2], 
@@ -631,7 +616,7 @@ void PCLView :: lineWireframe()
 
                 if(this->model->descriptor[this->model->descriptor[i]->featNode.triangles[j].rid]->featNode.csclcp[1] > this->model->descriptor[this->model->descriptor[i]->featNode.triangles[j].rid]->featNode.csclcp[0] 
                     && this->model->descriptor[this->model->descriptor[i]->featNode.triangles[j].rid]->featNode.csclcp[1] > this->model->descriptor[this->model->descriptor[i]->featNode.triangles[j].rid]->featNode.csclcp[2])
-                    glColor3f(this->model->descriptor[this->model->descriptor[i]->featNode.triangles[j].rid].csclcp[1],0,0);
+                    glColor3f(this->model->descriptor[this->model->descriptor[i]->featNode.triangles[j].rid]->featNode.csclcp[1],0,0);
                 else
                     glColor3f(this->model->descriptor[this->model->descriptor[i]->featNode.triangles[j].rid]->featNode.csclcp[1], 
                     this->model->descriptor[this->model->descriptor[i]->featNode.triangles[j].rid]->featNode.csclcp[2],
@@ -953,4 +938,135 @@ void PCLView :: labelsDisplay()
         glVertex3f(_inCloud->points[i].x, _inCloud->points[i].y, _inCloud->points[i].z);
     }
     glEnd() ;
+}
+
+void PCLView :: displayGraph()
+{
+    if(this->model->graph.size() == 0)
+            return;
+
+     glPointSize(1.0);
+        glBegin(GL_POINTS);
+
+        for(size_t i = 0; i <_inCloud->points.size(); i++)
+            {
+            if(model->labels[i] == 5)
+            {
+                double temp = _intensity[i];
+                glColor3d(temp, temp, temp) ;
+                glVertex3f(_inCloud->points[i].x, _inCloud->points[i].y, _inCloud->points[i].z);
+            }
+            }
+        glEnd();
+
+
+        glLineWidth(1.5);
+        glBegin(GL_LINES);
+
+        for (size_t i = 0 ; i < this->model->graph.size() ; i++)
+        {
+            int m = this->model->graph[i].nd.idx;
+            if(model->labels[m] == 5)
+            {
+
+
+            for(size_t j = 0; j < this->model->graph[i].edge.size(); j++)
+            {
+                int n = this->model->graph[i].edge[j].idx;
+
+               // if(label[n] == 5)
+                {
+
+                glColor3d(1.0, 0.0, 0.0) ;
+
+                glVertex3f(_inCloud->points[m].x, _inCloud->points[m].y, _inCloud->points[m].z);
+
+                glVertex3f(_inCloud->points[n].x, _inCloud->points[n].y, _inCloud->points[n].z);
+                }
+            }
+            }
+        }
+
+        glEnd() ;
+}
+
+bool PCLView::renderStructFDs(int pointMode)
+{
+    if(_inCloud->points.size() <= 0 || this->model->descriptor.size()<=0)
+        return false;
+
+    if(pointMode == 1)
+    {
+        idxPtCloudFeat();   ////reduced point cloud with feature value
+    }
+    else if(pointMode == 2)
+    {
+        renderCurvature();
+    }
+    else if(pointMode == 3)
+    {
+        csclcpDisplay();
+    }
+    else if(pointMode == 4)
+    {
+        drawLineFatures();
+    }
+    else if(pointMode == 5)
+    {
+        sumeigen_Display();
+    }
+    else if(pointMode == 6)
+    {
+        planarityDisplay();
+    }
+    else if(pointMode == 7)
+    {
+        anisotropyDisplay();
+    }
+    else if(pointMode == 8)
+    {
+        sphericityDisplay();
+    }
+    else if(pointMode == 9)
+    {
+        lineWireframe();
+    }
+    else if(pointMode == 10)
+    {
+        triangulation_pointset();
+    }
+    else if(pointMode == 11)
+    {
+        donDisplay();
+    }
+    else if(pointMode == 12)
+    {
+        contours();
+    }
+    else if(pointMode == 13)
+    {
+        tensorLines();
+    }
+    else if(pointMode == 14)
+    {
+        heightMap();
+    }
+    else if(pointMode == 15)
+    {
+        linearityDisplay();
+    }
+    else if(pointMode == 16)
+    {
+        omnivarianceDisplay();
+    }
+    else if(pointMode == 17)
+    {
+        eigenentropyDisplay();
+    }
+    else if(pointMode == 18)
+    {
+        labelsDisplay();
+    }
+
+    return true;
 }

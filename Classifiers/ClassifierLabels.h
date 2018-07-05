@@ -3,7 +3,6 @@
 
 enum ClassLabels
 {
-    Point,
     Curve,
     Disc
 };

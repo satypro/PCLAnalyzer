@@ -50,6 +50,8 @@ public slots:
     void SetScalarMin(double scalarMin);
     void SetScalarMax(double scalarMax);
     void SetTensorType(int index);
+    void SetDisplayMode(int displaymode, int pointmode);
+    void SetMeatFeatDispMode(int pointMode);
 
 private:
     Ui::PCLAnalyzerWindow *ui;
@@ -72,9 +74,11 @@ private:
     float rmin;
     float rmax;
     int scale;
+    int _displaymode, _pointmode;
     ClassifierTypes classifierType;
 
     std::map<std::string, std::string>& PrepareRequest();
+
 };
 
 #endif // PCLANALYZERWINDOW_H

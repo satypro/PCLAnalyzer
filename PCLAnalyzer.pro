@@ -47,7 +47,8 @@ SOURCES += main.cpp\
     UI/Widgets/ParameterWidget.cpp \
     Utilities/Graph.cpp \
     Utilities/Util.cpp \
-    Views/Color.cpp
+    Views/Color.cpp \
+    Classifiers/Barycentric.cpp
 
 HEADERS  += pclanalyzerwindow.h \
     Neighbours/SearchNeighbourOctTree.h \
@@ -90,7 +91,8 @@ HEADERS  += pclanalyzerwindow.h \
     UI/Widgets/ParameterWidget.h \
     Utilities/Graph.h \
     Utilities/Util.h \
-    Views/Color.h
+    Views/Color.h \
+    Classifiers/Barycentric.h
 
 FORMS    += pclanalyzerwindow.ui \
     mainwindow.ui

@@ -162,13 +162,13 @@ PointDescriptor* Classifier::Process()
 
     if (result.EigenValues(0,0) == 0.0 && result.EigenValues(2,0) == 0.0  && result.EigenValues(1,0) == 0.0 )
     {
-        pointDescriptor->label = Point;
+        //pointDescriptor->label = Point;
         return pointDescriptor;
     }
 
     if (0.5 * result.EigenValues(0,0) <= result.EigenValues(2,0))
     {
-        pointDescriptor->label = Point;
+        // pointDescriptor->label = Point;
         return pointDescriptor;
     }
 

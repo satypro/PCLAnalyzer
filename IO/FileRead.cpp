@@ -340,3 +340,32 @@ bool FileRead::xyzFileRead(std::string filename, CloudType &cloudData, std::vect
 
   return true;
 }
+
+bool FileRead::readLabels(std::string filename, std::vector <int>&labels)
+{
+  bool errorCode;
+  FILE *fp = fopen(filename.c_str(), "r");
+  if(fp == NULL)
+  {
+    printf("Invalid File path. Please select correct file\n");
+    return false;
+  }
+  int totvertices;
+
+  char buffer[1000];
+
+  errorCode = fgets(buffer,300,fp);
+
+  sscanf(buffer, "%d", &totvertices);
+
+  labels.resize(totvertices);
+  for( size_t i = 0 ; i < totvertices ; ++i)
+  {
+    int sno, label;
+    errorCode = fgets(buffer,300,fp);
+    sscanf(buffer,"%d %d", &sno, &label);
+    labels[i] = label;
+  }
+
+  return true;
+}

@@ -15,6 +15,7 @@ public:
 
     std::string getFileType(std::string sFilePath);
     bool read(std::string sFilePath, CloudType &cloudData, std::vector <float>&intensity);
+    bool readLabels(std::string filename, std::vector <int>&labels);
     void displayLasInfo();
 
 private:

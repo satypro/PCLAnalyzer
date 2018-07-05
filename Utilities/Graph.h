@@ -14,7 +14,7 @@ public:
     Graph();
     typedef std::vector<idxType> IndxCont;
     typedef std::vector<pcl::PointXYZ> PtCont;
-    typedef std::vector<std::vector<idxType>> centroidType;
+    typedef std::vector<std::vector<idxType> > centroidType;
 
     void constructGraph(std::vector<gnode> &graph, std::vector<idxType> &graphIdx);
     void setParams(float radius, float rmaxpt);
@@ -24,7 +24,13 @@ public:
     void setSaliencyMaps(std::vector<PointDescriptor*>& descriptor);
 private:
 
-    bool r_search(std::vector<node> &seed, std::vector<node> &criticalSeed, IndxCont *neighborIndices, IndxCont *neighborSize, ftType radius, idxType rmaxpts, vector<myfloat3> &maxevecs);
+    bool r_search(std::vector<node> &seed,
+                  std::vector<node> &criticalSeed,
+                  IndxCont *neighborIndices,
+                  IndxCont *neighborSize,
+                  ftType radius,
+                  idxType rmaxpts,
+                  std::vector<myfloat3> &maxevecs);
     inline float get_val(myfloat3 u, myfloat3 v, myfloat3 evecs);
     int check(std::vector<gnode>*graph, myfloat3 evecs, int index);
     inline void get_minidx(myfloat3 &u, myfloat3 &v, myfloat3 &evecs, std::vector<tempminval> *tempmin, idxType j);

@@ -47,7 +47,7 @@ Util::Util()
 
 }
 
-void Util::ComputeDoNs_MSO(std::vector<PointDescriptor*>& descriptor,float rmin, float rmax)
+void Util::ComputeDoNs_MSO(std::vector<PointDescriptor*>& descriptor, float rmin, float rmax)
 {
     pcl::search::Search<pcl::PointXYZ>::Ptr tree = boost::shared_ptr<pcl::search::Search<pcl::PointXYZ> > (new pcl::search::KdTree<pcl::PointXYZ>);
 
@@ -132,8 +132,8 @@ void Util::Triangulate(float radius, std::vector<PointDescriptor*>& descriptor)
                 {
                     if((descriptor[pointIdxRadiusSearch[j]]->featNode.csclcp[1]>=.25
                         && descriptor[pointIdxRadiusSearch[j]]->featNode.csclcp[1]<=.55 )
-                            || (descriptor[pointIdxRadiusSearch[j]]->featNode.don>=don_low
-                                && descriptor[pointIdxRadiusSearch[j]]->featNode<=don_high)
+                            || (descriptor[pointIdxRadiusSearch[j]]->featNode.don >= don_low
+                                && descriptor[pointIdxRadiusSearch[j]]->featNode.don <= don_high)
                             || (descriptor[pointIdxRadiusSearch[j]]->featNode.csclcp[1] > descriptor[pointIdxRadiusSearch[j]]->featNode.csclcp[0]
                                 && descriptor[pointIdxRadiusSearch[j]]->featNode.csclcp[1] > descriptor[pointIdxRadiusSearch[j]]->featNode.csclcp[2])
                     )

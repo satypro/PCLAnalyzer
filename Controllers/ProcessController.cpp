@@ -15,6 +15,7 @@
 #include "boost/lexical_cast.hpp"
 #include "Descriptors/PointDescriptor.h"
 #include <vector>
+#define LABEL_FILE "/home/satendra/data/label/d4-alg2l.txt"
 
 bool comparede(double i, double j)
 {
@@ -48,6 +49,9 @@ IViewModel* ProcessController::Process(std::map<std::string, std::string> reques
     {
         FileRead *readObject = new FileRead;
         bool nErrorCode = readObject->read(_filePath, _tempCloud, _intensity);
+
+        std::string labelFile = LABEL_FILE;
+        readObject->readLabels(labelFile, labels);
         delete readObject;
 
         if (nErrorCode == false)
@@ -77,16 +81,29 @@ IViewModel* ProcessController::Process(std::map<std::string, std::string> reques
     classifier->SetSearchStrategy(search);
     classifier->setCloud(cloud);
     model->cloud = cloud;
+    model->intensity = _intensity;
+    model->labels = labels;
     model->descriptor = classifier->Classify();
+
+    for (size_t i = 0; i < cloud->points.size(); i++)
+    {
+        model->descriptor[i]->labels = labels[i];
+    }
+
+    char* pEnd;
+    float _rmin = ::strtof(request["rmin"].c_str(), &pEnd);
+    float _rmax = ::strtof(request["rmax"].c_str(), &pEnd);
 
     Util * util = new Util();
     util->_inCloud = cloud;
     util->SetSearchStrategy(search);
-    util->ComputeDoNs_MSO();
-    
-
+    util->ComputeDoNs_MSO(model->descriptor,_rmin, _rmax);
+    util->Triangulate(_rmin, model->descriptor);
+    util->GenerateTensorLines3(model->descriptor);
+    util->PruneTriangles(_rmin, model->descriptor);
 
     StructFeatClassification(model);
+    CurveGraphExtraction(model, request);
 
     return model;
 }

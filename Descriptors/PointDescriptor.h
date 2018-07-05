@@ -12,6 +12,7 @@ public:
     featProps    featProp;
     glyphVars    glyph;
     ClassLabels  label;
+    int labels;
     std::vector <unsigned int> PtsProp;
 };
 

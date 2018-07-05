@@ -3,7 +3,7 @@
 #include <pcl/point_types.h>
 #include <pcl/octree/octree_impl.h>
 #include <pcl/octree/octree_iterator.h>
-#include <pcl/octree/octree_pointcloud_pointstd::vector.h>
+#include <pcl/octree/octree_pointcloud.h>
 #include <pcl/common/common.h>
 #include <pcl/common/eigen.h>
 #include <pcl/common/centroid.h>
@@ -39,33 +39,29 @@ void Graph::setSaliencyMaps(std::vector<PointDescriptor*>& descriptor)
     _descriptor = descriptor;
 }
 
-
 bool Graph::r_search(std::vector<node> &seed, std::vector<node> &criticalSeed, IndxCont *neighborIndices, IndxCont *neighborSize, ftType radius, idxType rmaxpts, std::vector<myfloat3> &maxevecs)
 {
     pcl::PointCloud<pcl::PointXYZ>::Ptr nodeCloud(new pcl::PointCloud<pcl::PointXYZ>);
 
-     nodeCloud->header = _inCloud->header;
-     nodeCloud->points.resize(seed.size() + criticalSeed.size());
+    nodeCloud->header = _inCloud->header;
+    nodeCloud->points.resize(seed.size() + criticalSeed.size());
 
-     for(int m = 0; m < seed.size(); m++)
-     {
-         int k = seed[m].idx;
-         nodeCloud->points[m] = _inCloud->points[k];
+    for(int m = 0; m < seed.size(); m++)
+    {
+        int k = seed[m].idx;
+        nodeCloud->points[m] = _inCloud->points[k];
+    }
 
-     }
+    for(int m = seed.size(); m < (seed.size() + criticalSeed.size()) ; m++)
+    {
+        int k = criticalSeed[m -seed.size()].idx;
+        nodeCloud->points[m] = _inCloud->points[k];
+    }
 
-     for(int m = seed.size(); m < (seed.size() + criticalSeed.size()) ; m++)
-     {
-         int k = criticalSeed[m -seed.size()].idx;
-         nodeCloud->points[m] = _inCloud->points[k];
-
-     }
-
-
-    Eigen::Matrix3f eigen_std::vectors;
-    Eigen::std::vector3f eigen_values;
+    Eigen::Matrix3f eigen_vectors;
+    Eigen::Vector3f eigen_values;
     myfloat3 direction;
-    Eigen::std::vector4f xyz_centroid;
+    Eigen::Vector4f xyz_centroid;
     Eigen::Matrix3f covariance_matrix;
     std::vector<int> pointIdxRadiusSearch;
     std::vector<float> pointRadiusSquaredDistance;
@@ -113,13 +109,13 @@ bool Graph::r_search(std::vector<node> &seed, std::vector<node> &criticalSeed, I
              pcl::computeCovarianceMatrix(*tempCloud, xyz_centroid, covariance_matrix);
 
              // Compute the eigen values of 3x3 covariance matrix
-             pcl::eigen33(covariance_matrix, eigen_std::vectors, eigen_values);
+             pcl::eigen33(covariance_matrix, eigen_vectors, eigen_values);
 
 
 
-            direction.x = eigen_std::vectors(2, 0);
-            direction.y = eigen_std::vectors(2, 1);
-            direction.z = eigen_std::vectors(2, 2);
+            direction.x = eigen_vectors(2, 0);
+            direction.y = eigen_vectors(2, 1);
+            direction.z = eigen_vectors(2, 2);
 
             tempCloud->points.clear();
 
@@ -369,7 +365,7 @@ bool Graph::propagate(std::vector<node> &seed, std::vector<node> &criticalSeed, 
 
     }
     else
-        cout<<"minIndex not in range "<<minIndex<<endl;
+        std::cout<<"minIndex not in range "<<minIndex<<std::endl;
 
 }
 
@@ -412,7 +408,7 @@ int Graph::connectedge
     }
     else
     {
-        cout<<"wrong check parameter"<<endl;
+        std::cout<<"wrong check parameter"<<std::endl;
         return 0;
     }
 
@@ -422,7 +418,7 @@ int Graph::connectedge
     if(error == true )
     {
         if(temp < 0)
-            cout<<"temp "<<temp<<endl;
+            std::cout<<"temp "<<temp<<std::endl;
         else
         {
             propagate(seed, criticalSeed, temp, idx, graph, graphIdx);
@@ -435,7 +431,7 @@ int Graph::connectedge
     {
         //cout<<"me "<<endl;
         if(temp1 <0)
-            cout<<"temp1 "<<temp1<<endl;
+            std::cout<<"temp1 "<<temp1<<std::endl;
         else
         {
             propagate(seed, criticalSeed, temp1, idx, graph, graphIdx);
@@ -817,7 +813,7 @@ bool Graph::connectCriticalPoints(IndxCont &ng_sz, IndxCont &ng_idx, std::vector
 {
     if(_critcalNode.size() == 0)
     {
-        cout<<"no critical points"<<endl;
+        std::cout<<"no critical points"<<std::endl;
         return false;
     }
 
@@ -887,7 +883,7 @@ void Graph::constructGraph(std::vector<gnode> &graph, std::vector<idxType> &grap
     IndxCont neighborIndices, neighborSize;
     if(_node.size() == 0)
     {
-        cout<<"Initialseed size is zero. Can't generate any graph"<<endl;
+        std::cout<<"Initialseed size is zero. Can't generate any graph"<<std::endl;
         return;
     }
 
@@ -899,7 +895,7 @@ void Graph::constructGraph(std::vector<gnode> &graph, std::vector<idxType> &grap
 
     nodeInfo tempnode;
 
-    cout<<"size  maxevecs "<<maxevecs.size()<<endl;
+    std::cout<<"size  maxevecs "<<maxevecs.size()<<std::endl;
 
     graph.resize(_node.size());
 

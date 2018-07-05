@@ -18,6 +18,8 @@ public:
     std::vector<PointDescriptor*> descriptor;
     std::vector<gnode> graph;
     std::vector <unsigned int> PtsProp;
+    std::vector <float> intensity;
+    std::vector <int> labels;
 };
 
 #endif // VIEWMODEL_H

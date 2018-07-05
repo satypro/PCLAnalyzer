@@ -2,6 +2,8 @@
 #define DATATYPES_H
 #include <pcl/common/eigen.h>
 
+typedef float ftType;
+
 struct TensorType
 {
     float evec0[3];
