@@ -22,6 +22,7 @@ std::vector<PointDescriptor*> Barycentric::Classify()
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud = getCloud();
     size_t cloudSize = cloud->points.size();
     std::vector<PointDescriptor*> descriptors(cloudSize, new PointDescriptor());
+    _searchNeighbour = GetSearchStrategy();
 
     char* pEnd;
     float _rmin = ::strtof(_config->GetValue("rmin").c_str(), &pEnd);
@@ -44,8 +45,48 @@ std::vector<PointDescriptor*> Barycentric::Classify()
         // Now for this optimal scale again perform the Neighbour Search
         // And Evaluate cl, cp and cs
 
+        std::cout<<"Optimal Scale : "<<optimalScale<<std::endl;
+
         _searchNeighbour->searchOption.searchParameter.kNearest = optimalScale;
         _neighbourCloud = _searchNeighbour->GetNeighbourCloud(cloud->points[index]);
+
+        //Now for the neighbour cloud evaluate its CoVariance Matrix and Eigen decomposition
+        Eigen::Vector4f xyz_centroid;
+        pcl::compute3DCentroid(*_neighbourCloud, xyz_centroid);
+
+        Eigen::Matrix3f covariance_matrix;
+        pcl::computeCovarianceMatrix(*_neighbourCloud, xyz_centroid, covariance_matrix);
+
+        TensorType tensor;
+
+        tensor.evec0[0] = covariance_matrix(0, 0);
+        tensor.evec0[1] = covariance_matrix(0, 1);
+        tensor.evec0[2] = covariance_matrix(0, 2);
+
+        tensor.evec1[0] = covariance_matrix(1, 0);
+        tensor.evec1[1] = covariance_matrix(1, 1);
+        tensor.evec1[2] = covariance_matrix(1, 2);
+
+        tensor.evec2[0] = covariance_matrix(2, 0);
+        tensor.evec2[1] = covariance_matrix(2, 1);
+        tensor.evec2[2] = covariance_matrix(2, 2);
+
+        // Now perform the eigen decomposition.
+        glyphVars glyph = EigenDecomposition(tensor);
+
+        // lets evaluate the cl, cp, cs
+        float len = glyph.evals[2] + glyph.evals[1] + glyph.evals[0];
+        float cl = (glyph.evals[0] - glyph.evals[1])/len; //ev0>ev1>ev2
+        float cp = (2*(glyph.evals[1] - glyph.evals[2]))/len ;//(2.0 * (eigen_values[1] - eigen_values[0]));
+        float cs = 1 - (cl+cp); //1.0 - cl - cp;
+
+        glyph.csclcp[0] = cs;
+        glyph.csclcp[1] = cl;
+        glyph.csclcp[2] = cp;
+
+        descriptors[index]->glyph = glyph;
+
+        std::cout<<"LEN"<<len<< " CL :"<<cl <<" CS :"<<cs<<" CP :"<<cp<<std::endl;
     }
 
     return descriptors;
@@ -99,8 +140,11 @@ int Barycentric::GetOptimalScale(pcl::PointXYZ& searchPoint)
 
         // calculate the Shannon Entropy;
         // As e1+e2+e3 = 1
-
-        float S = -e1 * log(e1) - e2 * log(e2) - e3 * log(e3);
+        float epsilon = 0.16;
+        e1 = e1 <= 0 ? epsilon : e1;
+        e2 = e2 <= 0 ? epsilon : e2;
+        e3 = e3 <= 0 ? epsilon : e3;
+        float S = (-1*e1 * log(e1)) - (e2 * log(e2)) - (e3 * log(e3));
 
         // Also S >= 0 , since log(e1) , log(e2), log(e3) < 0
         if (S < S_Min)
@@ -143,4 +187,6 @@ glyphVars Barycentric::EigenDecomposition(TensorType tensor)
     glyph.evecs[6] = V[0][0];
     glyph.evecs[7] = V[1][0];
     glyph.evecs[8] = V[2][0];
+
+    return glyph;
 }

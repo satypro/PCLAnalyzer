@@ -2,6 +2,7 @@
 #include "Classifier.h"
 #include "BoundaryTensorClassifier.h"
 #include "DiffusedNormalVotingClassifier.h"
+#include "Barycentric.h"
 
 std::map<ClassifierTypes, ClassifiersBase*> ClassifiersFactory::_classifierInstanceMap;
 
@@ -47,7 +48,7 @@ ClassifiersBase* ClassifiersFactory::GetClassifier(ClassifierTypes classifierTyp
             object = new Classifier();
         break;
         case C_2DCM:
-            object = new Classifier();
+            object = new Barycentric();
         break;
         default:
             object = new Classifier();
