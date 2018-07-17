@@ -3,6 +3,9 @@
 #include <pcl/common/common.h>
 #include <pcl/common/eigen.h>
 #include "Utilities/eig3.h"
+#include <iostream>
+#include <fstream>
+#include "IO/FileRead.h"
 #include <math.h>
 
 Barycentric::Barycentric()
@@ -19,19 +22,18 @@ Configuration* Barycentric::GetConfig()
 
 std::vector<PointDescriptor*> Barycentric::Classify()
 {
+    std::ofstream fout;
+    fout.open("/home/satendra/tite3.txt");
+    fout<<"IDX"<<","<<"OPT_K"<<","<<"CL"<<","<<"CS"<<","<<"CP"<<"\n";
+
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud = getCloud();
     size_t cloudSize = cloud->points.size();
     std::vector<PointDescriptor*> descriptors(cloudSize, new PointDescriptor());
     _searchNeighbour = GetSearchStrategy();
 
-    char* pEnd;
-    float _rmin = ::strtof(_config->GetValue("rmin").c_str(), &pEnd);
-    float _rmax = ::strtof(_config->GetValue("rmax").c_str(), &pEnd);
-    float _scale = ::strtof(_config->GetValue("scale").c_str(), &pEnd);
-
     std::vector<int> optimalScales;
 
-    for(int index = 0 ; index < cloudSize; index++)
+    for(int index = 0; index < cloudSize; index++)
     {
         if (isnan(cloud->points[index].x) || isnan(cloud->points[index].y) || isnan(cloud->points[index].z))
         {
@@ -45,7 +47,7 @@ std::vector<PointDescriptor*> Barycentric::Classify()
         // Now for this optimal scale again perform the Neighbour Search
         // And Evaluate cl, cp and cs
 
-        std::cout<<"Optimal Scale : "<<optimalScale<<std::endl;
+        std::cout<<"Index :"<<index<<" Optimal Scale : "<<optimalScale<<std::endl;
 
         _searchNeighbour->searchOption.searchParameter.kNearest = optimalScale;
         _neighbourCloud = _searchNeighbour->GetNeighbourCloud(cloud->points[index]);
@@ -76,9 +78,22 @@ std::vector<PointDescriptor*> Barycentric::Classify()
 
         // lets evaluate the cl, cp, cs
         float len = glyph.evals[2] + glyph.evals[1] + glyph.evals[0];
-        float cl = (glyph.evals[0] - glyph.evals[1])/len; //ev0>ev1>ev2
-        float cp = (2*(glyph.evals[1] - glyph.evals[2]))/len ;//(2.0 * (eigen_values[1] - eigen_values[0]));
-        float cs = 1 - (cl+cp); //1.0 - cl - cp;
+        float cl = 0.0;
+        float cp = 0.0;
+        float cs = 0.0;
+
+        if (len != 0.0)
+        {
+            cl = (glyph.evals[0] - glyph.evals[1])/len; //ev0>ev1>ev2
+            cp = (2*(glyph.evals[1] - glyph.evals[2]))/len ;//(2.0 * (eigen_values[1] - eigen_values[0]));
+            cs = 1 - (cl+cp); //1.0 - cl - cp;
+        }
+
+        /*
+        float cl = (glyph.evals[0] - glyph.evals[1])/glyph.evals[0];
+        float cp = (glyph.evals[1] - glyph.evals[2])/glyph.evals[0];
+        float cs = glyph.evals[2]/glyph.evals[0];
+        */
 
         glyph.csclcp[0] = cs;
         glyph.csclcp[1] = cl;
@@ -86,8 +101,31 @@ std::vector<PointDescriptor*> Barycentric::Classify()
 
         descriptors[index]->glyph = glyph;
 
-        std::cout<<"LEN"<<len<< " CL :"<<cl <<" CS :"<<cs<<" CP :"<<cp<<std::endl;
+        //std::cout<<index<<" LEN : "<<len<< " CL : "<<cl <<" CS : "<<cs<<" CP : "<<cp<<std::endl;
+
+        /*fout<<index
+            <<","
+            <<optimalScale
+            <<","
+            <<cl
+            <<","
+            <<cs
+            <<","
+            <<cp;
+        */
+        fout<<index
+            <<" "
+            <<optimalScale
+            <<" "
+            <<cl
+            <<" "
+            <<cs
+            <<" "
+            <<cp;
+        fout<<"\n";
     }
+
+    fout.close();
 
     return descriptors;
 }
@@ -98,7 +136,7 @@ int Barycentric::GetOptimalScale(pcl::PointXYZ& searchPoint)
 
     float S_Min = 1;
 
-    for (int K = 10 ; K <= 100 ; K++ )
+    for (int K = 10 ; K <= 100 ; K+=10)
     {
         _searchNeighbour->searchOption.searchParameter.kNearest = K;
         _neighbourCloud = _searchNeighbour->GetNeighbourCloud(searchPoint);
@@ -138,15 +176,17 @@ int Barycentric::GetOptimalScale(pcl::PointXYZ& searchPoint)
         float e2 = glyph.evals[1] / eigenValueSum;
         float e3 = glyph.evals[2] / eigenValueSum;
 
+        // std::cout<<" e1 : "<<e1<<"  e2 : "<< e2<<" e3 : " << e3<<std::endl;
         // calculate the Shannon Entropy;
         // As e1+e2+e3 = 1
-        float epsilon = 0.16;
+        float epsilon = 0.016;
         e1 = e1 <= 0 ? epsilon : e1;
         e2 = e2 <= 0 ? epsilon : e2;
         e3 = e3 <= 0 ? epsilon : e3;
         float S = (-1*e1 * log(e1)) - (e2 * log(e2)) - (e3 * log(e3));
 
         // Also S >= 0 , since log(e1) , log(e2), log(e3) < 0
+        // std::cout<<" S : "<<S<<"  S_MIN : "<< S_Min<<std::endl;
         if (S < S_Min)
         {
             S_Min = S;

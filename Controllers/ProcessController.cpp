@@ -15,7 +15,7 @@
 #include "boost/lexical_cast.hpp"
 #include "Descriptors/PointDescriptor.h"
 #include <vector>
-#define LABEL_FILE "/home/satendra/data/label/d4-alg2l.txt"
+#define LABEL_FILE "/home/satendra/data/label/labels4.txt"
 
 bool comparede(double i, double j)
 {
@@ -70,7 +70,7 @@ IViewModel* ProcessController::Process(std::map<std::string, std::string> reques
     /*Search Neighbour Options*/
     SearchOption option;
     option.neighbourSearchDataStructure = OctTree; // Get this Vlaue from the DropDown
-    option.neighbourSearchTypes = Radius;
+    option.neighbourSearchTypes = KNearest;
     option.searchParameter = parameter;
 
     SearchNeighbourBase* search = GetNeighbourSearchStrategy(option);
@@ -85,10 +85,23 @@ IViewModel* ProcessController::Process(std::map<std::string, std::string> reques
     model->labels = labels;
     model->descriptor = classifier->Classify();
 
+    std::cout<<"Descriptor  DONE...."<<std::endl;
+
+    ofstream fout("/home/satendra/data/Barycentric2.txt");
+    fout<<cloud->points.size()<<endl;
+    fout<<"CS"<<","<<"CL"<<","<<"CP"<<","<<"LABEL";
+
     for (size_t i = 0; i < cloud->points.size(); i++)
     {
         model->descriptor[i]->labels = labels[i];
+        // Now Write in file
+        fout<<model->descriptor[i]->glyph.csclcp[0]
+            <<","<<model->descriptor[i]->glyph.csclcp[1]
+            <<","<<model->descriptor[i]->glyph.csclcp[2]
+            <<","<<labels[i];
+        fout<<"\n";
     }
+    fout.close();
 
     char* pEnd;
     float _rmin = ::strtof(request["rmin"].c_str(), &pEnd);
